@@ -10,15 +10,23 @@ interface Setup { mode: "cpu"|"2p"; p1: CharId; p2: CharId; arena: ArenaId; diff
 DEFAULT_SETUP = { mode:"cpu", p1:"chicken", p2:"buffalo", arena:"wasteland", difficulty:"normal", roundsToWin:2 }
 ```
 
-- Title → `onStart(mode)` sets `setup.mode` and goes to select.
+- Title → `onStart(mode)` sets `setup.mode` and goes to select; a **🔊 AUDIO SETTINGS** button opens the
+  settings overlay (`onSettings`).
 - Select → mutates `setup`, FIGHT! → `screen="fight"`; BACK → title.
 - Fight → HUD callbacks: `onResume` (`game.setPaused(false)`), `onRematch` (`game.restart()`),
-  `onReselect` (→ select), `onQuit` (→ title). `setHud(null)` on leaving so the HUD unmounts.
+  `onReselect` (→ select), `onQuit` (→ title), `onSettings` (opens settings; pauses first). `setHud(null)` on leaving so the HUD unmounts.
+- **Settings overlay** — `settingsOpen` state renders `<SettingsScreen>` on top of any screen; opening it from
+  a fight pauses the game (and ducks music), opening it from a menu leaves the attract game running.
 - `gameKey` = `fight-${mode}-${arena}-${p1}-${p2}-${difficulty}-${roundsToWin}` or `attract-${arena}-${p1}-${p2}`.
   The canvas is keyed by it → a new `Game` (and WebGL context) per distinct configuration; changing
   fighters/arena on the select screen live-updates the attract backdrop.
 - Touch detection: `matchMedia("(pointer: coarse)")` → `isTouch` → shows `TouchControls`, hides key hints.
 - A floating **PAUSE** button is rendered during fights (top centre) in addition to `Esc`.
+
+**Audio bootstrapping** (`App.tsx`): capture-phase `pointerdown`/`keydown`/`click` listeners call
+`audio.unlock()` on the first user gesture (autoplay policy). A delegated `click` listener plays a UI sound
+for any `<button>` based on its `data-sfx` attribute (default `ui.click`, `data-sfx="none"` opts out — used
+by touch controls), and a delegated `pointerover` plays `ui.hover`. See `docs/08-AUDIO.md`.
 
 ### `HUDState` contract (emitted by `Game` ≈30 Hz + on events)
 ```ts
@@ -33,13 +41,18 @@ HUDFighter { name; hp; maxHp; meter; rounds; color; hitAge; combo; moveNames; sp
 ### Components
 - `components/HUD.tsx` — health bars (skewed, with a white "ghost" bar that lags 350 ms), round pips (max 3
   shown), timer (red + blink ≤10 s), combo popup, banners, meters (gold + shine when ready), key hints
-  (desktop only), **pause overlay** and **match-end results overlay** (REMATCH / CHANGE FIGHTERS / MENU).
+  (desktop only), **pause overlay** (RESUME / 🔊 AUDIO SETTINGS / QUIT, via the `onSettings` prop) and
+  **match-end results overlay** (REMATCH / CHANGE FIGHTERS / MENU). Buttons carry `data-sfx` for UI sounds.
 - `components/Menu.tsx` — `TitleScreen` (mode buttons + control legend) and `SelectScreen`
   (per-player fighter card grids generated from `Object.keys(FIGHTERS)`, arena cards from `ARENAS`,
   difficulty (cpu only), match length 1 / best-of-3 / best-of-5 → `roundsToWin` 1/2/3, FIGHT!).
   `FighterCard` reads `cfg.stats` for the icon + 3 stat bars and `moveNames`.
 - `components/TouchControls.tsx` — pointer-captured buttons writing directly into the shared `touchInput`
-  object (`Input.ts`); movement cluster bottom-left, L/H/S bottom-right. P1 only.
+  object (`Input.ts`); movement cluster bottom-left, L/H/S bottom-right. P1 only (buttons carry `data-sfx="none"`).
+- `components/SettingsScreen.tsx` — the Audio Settings overlay: master/music/sfx sliders + mutes,
+  a *Prefer built-in synth* toggle, and a per-slot URL editor grouped by category (fighters, arenas, UI,
+  announcer, KO) with a live status badge (`WEB AUDIO` / `STREAMING` / `SYNTH` / …), preview ▶ and reset ↺
+  per row, and TEST / RESET-ALL actions. Reads the engine reactively via `useSyncExternalStore(audio.subscribe, () => audio.version)`. Full spec in `docs/08-AUDIO.md`.
 - `utils/cn.ts` — `clsx` + `tailwind-merge`.
 
 ### Styling

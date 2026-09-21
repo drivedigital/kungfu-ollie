@@ -194,15 +194,25 @@ hitstun .42, blockstun .28)` + `applyPoison(duration, dps)`; subsequent frames i
 
 ## 9. Presentation hooks fired from combat
 
-| Event | Where | Effect |
-|---|---|---|
-| any clean hit | `Game.onHit` | sparks (count scales with damage), point light flash, shake, hit-stop; ≥12 dmg adds shock disc + 0.35 screen flash |
-| grab connect | `Game.onHit` (`window.grab`) | green ring, pink sparks, small flash, 0.06 hit-stop |
-| block | `Game.onHit` | `blockSparks`, 35 % shake, 0.03 hit-stop |
-| KO | `Game.onHit` → `triggerKO` | 60 white sparks, big ring, shake 1.2, hit-stop 0.16, slow-mo, white screen flash |
-| landing impact > 9 | `Game.onLand` | white ground ring, shake |
-| jump / footsteps / landings | `Fighter` | `dustPuff` using `world.dustColor` (per arena) |
-| move start | `Fighter.startMove` | `rig.impulse(0.25 light / 0.5 other)` |
+Visuals (particles/camera) **and** audio are driven from the same `Game` callbacks. Audio goes through the
+`audio` singleton — see `docs/08-AUDIO.md` for the full event→sound map; the last column summarises it.
+
+| Event | Where | Visual effect | Audio |
+|---|---|---|---|
+| any clean hit | `Game.onHit` | sparks (count scales with damage), point light flash, shake, hit-stop; ≥12 dmg adds shock disc + 0.35 screen flash | attacker `punch.{soft\|hard}` (hard ≥10 dmg, panned by x); launcher adds `knock.hard`; hard hit adds defender `hiya.soft` |
+| grab connect | `Game.onHit` (`window.grab`) | green ring, pink sparks, small flash, 0.06 hit-stop | attacker `knock.soft` + defender `hiya.soft` |
+| block | `Game.onHit` | `blockSparks`, 35 % shake, 0.03 hit-stop | defender `clang.{soft\|hard}` |
+| KO | `Game.onHit` → `triggerKO` | 60 white sparks, big ring, shake 1.2, hit-stop 0.16, slow-mo, white screen flash | `ko.impact` + `ko.slowmo` + `crowd.gasp` + `announce.ko` + loser `hiya.hard`; music ducked & slowed to 0.72× (time-over: `ko.bell` instead) |
+| landing | `Game.onLand` | impact > 9: white ground ring + shake | impact > 9: `thud.hard` (+`ko.fall` if launched/dead); > 3: `thud.soft` |
+| jump / footsteps | `Fighter` | `dustPuff` using `world.dustColor` (per arena) | `world.cue("jump")` → quiet fast `whoosh.soft` |
+| throw release | `Fighter` (`grabbed`→thrown) | ring + dust + shake | `world.cue("throw")` → victim `hiya.soft` + grabber `whoosh.hard` |
+| get-up | `Fighter` (`down`→`getup`) | — | `world.cue("getup")` → quiet `thud.soft` |
+| move start | `Fighter.startMove` | `rig.impulse(0.25 light / 0.5 other)` | `Game.onMoveStart`: swing `whoosh.*` + battle cry; `__fire` (specials) plays `<char>.special` |
+| round / fight / win / match / timer ≤10 s | `Game` round-flow | banners | `announce.round` (+staggered `intro` cries), `announce.fight`, `announce.win`+`crowd.cheer`, `announce.match`, per-second `timer.tick` |
+
+The `World.cue(kind, f, other?)` hook exists specifically so `Fighter` can request audio-only cues
+(jump/throw/get-up) that have no other presentation owner; `Game` implements it. Adding a new cue = extend
+the union in `Fighter.ts` and handle it in `Game`'s `world.cue`.
 
 ## 10. Invariants to preserve
 

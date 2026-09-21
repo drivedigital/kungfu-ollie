@@ -65,14 +65,16 @@ in `characters/*.ts`*. Keep it that way.
 ```bash
 npm install            # three + @types/three are already in package.json
 npm run dev            # vite dev server
-npm run build          # -> dist/index.html (single file, ~1 MB, ~270 kB gzip)
+npm run build          # -> dist/index.html (single file, ~1.07 MB, ~290 kB gzip)
 npx tsc --noEmit -p tsconfig.json   # strict type-check (noUnusedLocals/Parameters are ON)
 ```
 
 Constraints inherited from the environment this was built in:
 - **Do not edit `package.json` / `vite.config.ts` by hand**; install packages with `npm install <pkg>`.
-- The build must keep succeeding as a single file; avoid assets that require separate URLs
-  (fonts are the one exception — Google Fonts are linked from `index.html` and degrade gracefully).
+- The build must keep succeeding as a single file; avoid *bundled* assets that require separate URLs.
+  Two intentional exceptions load remotely at runtime and degrade gracefully: Google **Fonts** (linked from
+  `index.html`) and **audio** (default sounds stream from the Pixabay CDN; every slot has a built-in
+  synthesized fallback and user-overridable URLs — see `docs/08-AUDIO.md`). No audio files are bundled.
 - TypeScript is strict with unused-locals/params errors — a stray variable fails the build.
 
 ## Controls

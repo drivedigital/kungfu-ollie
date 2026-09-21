@@ -128,6 +128,7 @@ interface World {
   bounds: number; fx: FX; time: number; dustColor: number;
   onHit(e: HitEvent): void; onMoveStart(f: Fighter, m: MoveDef): void;
   onLand(f: Fighter, impact: number): void; shake(amount: number): void;
+  cue(kind: "jump" | "throw" | "getup", f: Fighter, other?: Fighter | null): void;  // audio-only presentation cues
 }
 interface HitEvent { attacker; defender; window: HitWindow; move: MoveDef; point: Vector3; blocked; ko; combo }
 ```

@@ -5,7 +5,7 @@
 ```
 src/game/audio/
   AudioEngine.ts   singleton mixer + loader + player (exported as `audio`, also window.__audio)
-  catalog.ts       every sound *slot*: id, label, group, kind, synth recipe, base gain, retrigger guard
+  catalog.ts       every sound *slot*: id, label, group, kind, synth recipe, base gain, retrigger guard, `cut`
   defaults.ts      AUTO-GENERATED default URLs (Pixabay CDN) + attribution per slot
   synth.ts         procedural fallback: offline sample renderer (48 recipes) + realtime ProceduralMusic
 src/components/SettingsScreen.tsx   mixer, per-slot URL editor, previews, status badges
@@ -132,5 +132,9 @@ upgrades every slot to tier 1.
 - Media elements can't be panned; only tier-1/synth voices use `StereoPannerNode`.
 - Changing a URL invalidates the slot immediately (and restarts the track if it's the current music/ambient).
 - `slot.minInterval` (default 30 ms) suppresses double triggers within one frame; long-tail slots use bigger values.
+- `slot.cut` (seconds, SFX only) fades a one-shot out early so a long remote file matches the on-screen
+  action — e.g. a 5 s "cinematic boom" used for a punch is cut to ~1.2 s. Applied to both buffer voices
+  (gain ramp + `stop`) and pooled media elements (timed volume fade, cancellable by a per-element token).
+  The built-in synths are already the right length, so `cut` mainly guards against over-long user URLs.
 - Headless verification: Chromium with `--autoplay-policy=no-user-gesture-required`; `window.__audio.inventory()`
   shows per-slot tiers (all 81 default URLs verified reachable; 76 `stream` immediately, the remaining arena tracks load lazily — see `docs/06`).
