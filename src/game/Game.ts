@@ -19,6 +19,7 @@ import { ARENA_BOUNDS, Arena, ArenaId } from "./arenas/common";
 import { buildWasteland } from "./arenas/Wasteland";
 import { buildFoundry } from "./arenas/Foundry";
 import { buildMeadow } from "./arenas/Meadow";
+import { audio } from "./audio/AudioEngine";
 
 export type GameMode = "attract" | "cpu" | "2p";
 export type Phase = "attract" | "intro" | "fight" | "ko" | "roundEnd" | "matchEnd";
@@ -152,6 +153,7 @@ export class Game {
   private loser: Fighter | null = null;
   private comboShow: { idx: number; count: number; until: number } | null = null;
   private tauntTimer = 4;
+  private lastTick = -1;
   private world: World;
   private tmp = new THREE.Vector3();
   private canvas: HTMLCanvasElement;
@@ -204,7 +206,21 @@ export class Game {
       shake: (amount) => {
         this.shake = Math.max(this.shake, amount);
       },
+      cue: (kind, f, other) => {
+        const c = f.cfg.id;
+        if (kind === "jump") audio.play(`${c}.whoosh.soft`, { gain: 0.45, rate: 1.25, vary: 0.05 });
+        else if (kind === "throw") {
+          audio.play(`${c}.hiya.soft`, { rate: 1.12, gain: 0.8 });
+          if (other) audio.play(`${other.cfg.id}.whoosh.hard`, { gain: 0.8 });
+        } else if (kind === "getup") audio.play(`${c}.thud.soft`, { gain: 0.35, rate: 1.1 });
+      },
     };
+
+    // audio: assets for this match, music bed and ambience
+    audio.preloadFor([opts.p1, opts.p2], opts.arena);
+    audio.setMusicRate(1);
+    audio.playMusic(opts.mode === "attract" ? "music.menu" : `arena.${opts.arena}.music`);
+    audio.playAmbient(`arena.${opts.arena}.ambient`);
 
     this.input.attach();
     this.input.onPause(() => {
@@ -261,12 +277,14 @@ export class Game {
   }
 
   togglePause() {
-    this.paused = !this.paused;
-    this.emitHud();
+    this.setPaused(!this.paused);
   }
 
   setPaused(p: boolean) {
+    if (p === this.paused) return;
     this.paused = p;
+    if (p) audio.duckMusic(0.35, 3600);
+    else audio.duckMusic(1, 0.1);
     this.emitHud();
   }
 
@@ -306,6 +324,12 @@ export class Game {
     // cinematic camera start: low angle beside player one
     this.camPos.set(a.pos.x - 2.5, 0.7, 4.5);
     this.camLook.set(a.pos.x + 1, 1.4, 0);
+    // audio: bell + staggered intro cries
+    audio.setMusicRate(1);
+    audio.play("announce.round");
+    audio.play(`${a.cfg.id}.intro`, { delay: 0.55 });
+    audio.play(`${b.cfg.id}.intro`, { delay: 1.45 });
+    this.lastTick = -1;
   }
 
   private startFight() {
@@ -316,6 +340,7 @@ export class Game {
       if (f.state === "intro") f.setState("idle");
     }
     this.setBanner("FIGHT!", undefined, false, "#ffd23f");
+    audio.play("announce.fight");
   }
 
   private triggerKO(loser: Fighter, timeOver = false) {
@@ -330,11 +355,20 @@ export class Game {
       loser.dead = true;
       loser.setState("ko");
       this.setBanner("TIME OVER", undefined, true, "#ffffff");
+      audio.play("ko.bell");
+      audio.duckMusic(0.5, 3);
     } else {
       this.timeScale = 0.18;
       this.setBanner("K.O.!", undefined, true, "#ff4d4d");
       this.flash = 1;
       this.flashKey++;
+      audio.play("ko.impact");
+      audio.play("ko.slowmo", { delay: 0.05 });
+      audio.play("crowd.gasp", { delay: 0.15 });
+      audio.play("announce.ko", { delay: 0.35 });
+      audio.play(`${loser.cfg.id}.hiya.hard`, { rate: 0.85, delay: 0.1, gain: 0.9 });
+      audio.duckMusic(0.3, 3.2);
+      audio.setMusicRate(0.72);
     }
   }
 
@@ -343,14 +377,19 @@ export class Game {
     this.timeScale = 1;
     this.phase = "roundEnd";
     this.phaseTime = 0;
+    audio.setMusicRate(1);
     if (this.winner) {
       const w = this.winner === 1 ? a : b;
       w.roundsWon++;
       w.setState("victory");
       const perfect = w.perfect && w.hp === w.cfg.maxHp;
       this.setBanner(`${w.cfg.name} WINS`, perfect ? "PERFECT!" : `Round ${this.round}`, true, w.cfg.color);
+      audio.play("announce.win", { delay: 0.15 });
+      audio.play("crowd.cheer", { delay: 0.1 });
+      audio.play(`${w.cfg.id}.hiya.hard`, { delay: 0.7 });
     } else {
       this.setBanner("DRAW", undefined, true);
+      audio.play("ko.bell");
     }
   }
 
@@ -362,6 +401,9 @@ export class Game {
       this.phaseTime = 0;
       this.winner = champ === a ? 1 : 2;
       this.setBanner(`${champ.cfg.name} WINS THE MATCH`, this.opts.mode === "cpu" && champ === a ? "Flawless victory for the player" : undefined, true, champ.cfg.color);
+      audio.play("announce.match");
+      audio.play("crowd.cheer", { delay: 0.4, gain: 1.2 });
+      audio.duckMusic(0.45, 4);
       this.emitHud();
     } else {
       this.startRound();
@@ -374,11 +416,15 @@ export class Game {
 
   private onHit(e: HitEvent) {
     const att = e.attacker;
+    const def = e.defender;
     const idx = att === this.fighters[0] ? 0 : 1;
+    const hard = e.window.damage >= 10;
+    const pan = Math.max(-0.6, Math.min(0.6, e.point.x / 8));
     if (e.blocked) {
       this.fx.blockSparks(e.point, att.facing);
       this.shake = Math.max(this.shake, e.window.shake * 0.35);
       this.hitstop = Math.max(this.hitstop, 0.03);
+      audio.play(`${def.cfg.id}.clang.${hard ? "hard" : "soft"}`, { vary: 0.06, pan });
       return;
     }
     if (e.window.grab && !e.ko) {
@@ -388,8 +434,16 @@ export class Game {
       this.fx.flash(e.point, 0x8dff5a, 20, 0.25, 6);
       this.shake = Math.max(this.shake, 0.3);
       this.hitstop = Math.max(this.hitstop, 0.06);
+      audio.play(`${att.cfg.id}.knock.soft`, { pan });
+      audio.play(`${def.cfg.id}.hiya.soft`, { rate: 1.15, delay: 0.06, gain: 0.8 });
       this.emitHud();
       return;
+    }
+    // impact sounds: attacker's punch, plus a knock for launchers and a hurt cry on hard hits
+    if (!e.ko) {
+      audio.play(`${att.cfg.id}.punch.${hard ? "hard" : "soft"}`, { vary: 0.07, pan });
+      if ((e.window.launch ?? 0) > 0) audio.play(`${att.cfg.id}.knock.hard`, { delay: 0.02, gain: 0.85, pan });
+      if (hard) audio.play(`${def.cfg.id}.hiya.soft`, { rate: 1.1, delay: 0.05, gain: 0.7 });
     }
     const power = 0.7 + e.window.damage / 18;
     this.fx.hitSparks(e.point, att.rig.sparkColor, 18 + e.window.damage * 1.2, power, att.facing);
@@ -414,7 +468,9 @@ export class Game {
 
   private onMoveStart(f: Fighter, m: MoveDef) {
     const p = this.tmp;
+    const c = f.cfg.id;
     if (m.name === "__fire") {
+      audio.play(`${c}.special`);
       if (m.fx === "laser") {
         f.rig.strikeWorld("special", p);
         const from = p.clone();
@@ -458,6 +514,23 @@ export class Game {
       }
       return;
     }
+    // swing / voice at move start
+    switch (m.slot) {
+      case "light":
+        audio.play(`${c}.whoosh.soft`, { vary: 0.08 });
+        if (Math.random() < 0.3) audio.play(`${c}.hiya.soft`, { gain: 0.6, vary: 0.05 });
+        break;
+      case "heavy":
+        audio.play(`${c}.whoosh.hard`, { vary: 0.06 });
+        audio.play(`${c}.hiya.soft`, { delay: 0.05, vary: 0.05 });
+        break;
+      case "air":
+        audio.play(`${c}.whoosh.hard`, { rate: 1.15, vary: 0.05 });
+        break;
+      case "special":
+        audio.play(`${c}.hiya.hard`);
+        break;
+    }
     if (m.fx === "stampede" || m.fx === "missiles" || m.fx === "belch") {
       // stampede pawing dust handled per-frame; missiles / gas fire at fireAt
       return;
@@ -477,9 +550,14 @@ export class Game {
   }
 
   private onLand(f: Fighter, impact: number) {
+    const pan = Math.max(-0.6, Math.min(0.6, f.pos.x / 8));
     if (impact > 9) {
       this.fx.ring(f.pos, 0xffffff, 1.6 + impact * 0.05, 0.4);
       this.shake = Math.max(this.shake, Math.min(0.5, impact * 0.03));
+      audio.play(`${f.cfg.id}.thud.hard`, { vary: 0.05, pan });
+      if (f.state === "launched" || f.dead) audio.play("ko.fall", { gain: 0.6, delay: 0.01 });
+    } else if (impact > 3) {
+      audio.play(`${f.cfg.id}.thud.soft`, { gain: Math.min(1, 0.5 + impact * 0.05), vary: 0.06, pan });
     }
   }
 
@@ -621,6 +699,13 @@ export class Game {
         break;
       case "fight":
         this.timer = Math.max(0, this.timer - dt);
+        {
+          const sec = Math.ceil(this.timer);
+          if (sec <= 10 && sec > 0 && sec !== this.lastTick) {
+            this.lastTick = sec;
+            audio.play("timer.tick", { rate: sec <= 3 ? 1.2 : 1 });
+          }
+        }
         if (this.timer <= 0) {
           const ra = a.hp / a.cfg.maxHp;
           const rb = b.hp / b.cfg.maxHp;

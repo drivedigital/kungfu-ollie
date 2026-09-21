@@ -15,7 +15,7 @@ export interface Setup {
 
 /* ------------------------------------------------------------------ */
 
-export function TitleScreen({ onStart }: { onStart(mode: Setup["mode"]): void }) {
+export function TitleScreen({ onStart, onSettings }: { onStart(mode: Setup["mode"]): void; onSettings(): void }) {
   return (
     <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-between bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.15)_0%,rgba(0,0,0,0.7)_100%)] px-6 py-8">
       <div className="mt-2 text-[11px] font-bold tracking-[0.5em] text-white/60 fade-up">PROCEDURAL 3D ARENA FIGHTER</div>
@@ -33,18 +33,28 @@ export function TitleScreen({ onStart }: { onStart(mode: Setup["mode"]): void })
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row fade-up" style={{ animationDelay: "0.4s" }}>
           <button
+            data-sfx="ui.transition"
             onClick={() => onStart("cpu")}
             className="rounded-xl bg-cyan-400 px-10 py-3 font-display text-3xl tracking-wider text-black shadow-[0_6px_0_#0a7c8c] transition hover:-translate-y-0.5 hover:bg-cyan-300 active:translate-y-1 active:shadow-none"
           >
             VS CPU
           </button>
           <button
+            data-sfx="ui.transition"
             onClick={() => onStart("2p")}
             className="rounded-xl bg-amber-400 px-10 py-3 font-display text-3xl tracking-wider text-black shadow-[0_6px_0_#9a5b00] transition hover:-translate-y-0.5 hover:bg-amber-300 active:translate-y-1 active:shadow-none"
           >
             2 PLAYERS
           </button>
         </div>
+        <button
+          data-sfx="none"
+          onClick={onSettings}
+          className="mt-4 rounded-lg border border-white/20 px-5 py-2 font-display text-xl tracking-wider text-white/80 transition hover:bg-white/10 fade-up"
+          style={{ animationDelay: "0.5s" }}
+        >
+          🔊 AUDIO SETTINGS
+        </button>
       </div>
       <div className="card-glass grid w-full max-w-2xl grid-cols-1 gap-3 rounded-2xl px-5 py-3 text-xs text-white/70 sm:grid-cols-2 fade-up" style={{ animationDelay: "0.5s" }}>
         <div>
@@ -79,6 +89,7 @@ function FighterCard({ id, selected, gold, onClick }: { id: CharId; selected: bo
   const stats = f.stats;
   return (
     <button
+      data-sfx="ui.select"
       onClick={onClick}
       className={cn(
         "card-glass group relative flex w-full flex-col items-start gap-2 overflow-hidden rounded-2xl p-4 text-left transition hover:bg-white/10",
@@ -136,7 +147,7 @@ export function SelectScreen({ setup, onChange, onFight, onBack }: { setup: Setu
   return (
     <div className="pointer-events-auto absolute inset-0 flex flex-col bg-[linear-gradient(180deg,rgba(0,0,0,0.75)_0%,rgba(0,0,0,0.35)_40%,rgba(0,0,0,0.75)_100%)]">
       <div className="flex items-center justify-between px-5 pt-4 sm:px-8">
-        <button onClick={onBack} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-bold tracking-widest text-white/70 hover:bg-white/10">
+        <button data-sfx="ui.back" onClick={onBack} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-bold tracking-widest text-white/70 hover:bg-white/10">
           ← BACK
         </button>
         <div className="font-display text-3xl text-white text-stroke-thin sm:text-4xl">CHOOSE YOUR FIGHTER</div>
@@ -168,6 +179,7 @@ export function SelectScreen({ setup, onChange, onFight, onBack }: { setup: Setu
               {ARENAS.map((a) => (
                 <button
                   key={a.id}
+                  data-sfx="ui.select"
                   onClick={() => set({ arena: a.id })}
                   className={cn("card-glass overflow-hidden rounded-2xl text-left transition hover:bg-white/10", setup.arena === a.id && "card-selected")}
                 >
@@ -216,6 +228,7 @@ export function SelectScreen({ setup, onChange, onFight, onBack }: { setup: Setu
               </div>
             </div>
             <button
+              data-sfx="ui.start"
               onClick={onFight}
               className="ml-auto rounded-xl bg-gradient-to-r from-cyan-400 to-amber-400 px-12 py-3 font-display text-4xl tracking-wider text-black shadow-[0_6px_0_rgba(0,0,0,0.5)] transition hover:-translate-y-0.5 hover:brightness-110 active:translate-y-1 active:shadow-none"
             >

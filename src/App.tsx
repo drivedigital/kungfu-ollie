@@ -3,6 +3,8 @@ import { Game, GameMode, HUDState } from "./game/Game";
 import { HUD } from "./components/HUD";
 import { SelectScreen, Setup, TitleScreen } from "./components/Menu";
 import { TouchControls } from "./components/TouchControls";
+import { SettingsScreen } from "./components/SettingsScreen";
+import { audio } from "./game/audio/AudioEngine";
 
 type Screen = "title" | "select" | "fight";
 
@@ -20,6 +22,7 @@ export default function App() {
   const [setup, setSetup] = useState<Setup>(DEFAULT_SETUP);
   const [hud, setHud] = useState<HUDState | null>(null);
   const [isTouch, setIsTouch] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const gameRef = useRef<Game | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -29,6 +32,37 @@ export default function App() {
     const h = (e: MediaQueryListEvent) => setIsTouch(e.matches);
     mq.addEventListener("change", h);
     return () => mq.removeEventListener("change", h);
+  }, []);
+
+  // Audio: unlock the context on the first gesture; delegated UI click/hover sounds via data-sfx.
+  useEffect(() => {
+    const unlock = () => audio.unlock();
+    const onClick = (e: MouseEvent) => {
+      audio.unlock();
+      const b = (e.target as HTMLElement | null)?.closest?.("button");
+      if (!b) return;
+      const id = b.dataset.sfx ?? "ui.click";
+      if (id !== "none") audio.play(id);
+    };
+    const onOver = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      const t = e.target as HTMLElement | null;
+      const b = t?.closest?.("button");
+      if (!b || b.dataset.sfx === "none") return;
+      const from = (e as PointerEvent & { relatedTarget?: Node | null }).relatedTarget;
+      if (from && b.contains(from as Node)) return;
+      audio.play("ui.hover");
+    };
+    window.addEventListener("pointerdown", unlock, { capture: true });
+    window.addEventListener("keydown", unlock, { capture: true });
+    document.addEventListener("click", onClick, true);
+    document.addEventListener("pointerover", onOver, true);
+    return () => {
+      window.removeEventListener("pointerdown", unlock, { capture: true });
+      window.removeEventListener("keydown", unlock, { capture: true });
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("pointerover", onOver, true);
+    };
   }, []);
 
   // A fresh canvas (and WebGL context) per game instance keeps context handling simple.
@@ -71,6 +105,11 @@ export default function App() {
   }, []);
   const resume = useCallback(() => gameRef.current?.setPaused(false), []);
   const rematch = useCallback(() => gameRef.current?.restart(), []);
+  const openSettings = useCallback(() => {
+    if (screen === "fight") gameRef.current?.setPaused(true);
+    audio.play("ui.transition");
+    setSettingsOpen(true);
+  }, [screen]);
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
@@ -82,11 +121,14 @@ export default function App() {
             setSetup((s) => ({ ...s, mode: m }));
             setScreen("select");
           }}
+          onSettings={openSettings}
         />
       )}
       {screen === "select" && <SelectScreen setup={setup} onChange={setSetup} onFight={() => setScreen("fight")} onBack={() => setScreen("title")} />}
 
-      {screen === "fight" && hud && <HUD hud={hud} onResume={resume} onQuit={quit} onRematch={rematch} onReselect={reselect} showControls={!isTouch} />}
+      {screen === "fight" && hud && <HUD hud={hud} onResume={resume} onQuit={quit} onRematch={rematch} onReselect={reselect} onSettings={openSettings} showControls={!isTouch} />}
+
+      {settingsOpen && <SettingsScreen onClose={() => setSettingsOpen(false)} />}
       {screen === "fight" && isTouch && hud && !hud.paused && hud.phase !== "matchEnd" && <TouchControls />}
 
       {screen === "fight" && hud && !hud.paused && hud.phase !== "matchEnd" && (

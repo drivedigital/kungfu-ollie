@@ -41,6 +41,8 @@ export interface World {
   onMoveStart(f: Fighter, m: MoveDef): void;
   onLand(f: Fighter, impact: number): void;
   shake(amount: number): void;
+  /** miscellaneous presentation cues (audio): jumps, throws, get-ups */
+  cue(kind: "jump" | "throw" | "getup", f: Fighter, other?: Fighter | null): void;
 }
 
 const GRAVITY = 34;
@@ -238,6 +240,7 @@ export class Fighter {
           this.squash = -0.14;
           this.setState("jump");
           world.fx.dustPuff(this.pos, 8, 0.45, world.dustColor, 1.8, 1.5);
+          world.cue("jump", this);
           break;
         }
         if (inp.down) {
@@ -321,6 +324,7 @@ export class Fighter {
           this.vel.x = dir * this.grabThrow.x;
           this.vel.y = this.grabThrow.y;
           this.pos.y = Math.max(this.pos.y, 0.02);
+          world.cue("throw", this, g);
           this.grabbedBy = null;
           this.squash = -0.15;
           world.fx.ring(this.pos, 0xa4ff6a, 1.6, 0.35);
@@ -332,7 +336,10 @@ export class Fighter {
       }
       case "down": {
         this.vel.x *= Math.exp(-6 * dt);
-        if (this.stateTime >= 0.85) this.setState("getup");
+        if (this.stateTime >= 0.85) {
+          this.setState("getup");
+          world.cue("getup", this);
+        }
         break;
       }
       case "getup": {

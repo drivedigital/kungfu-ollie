@@ -14,6 +14,7 @@ function Btn({ action, label, className }: { action: Action; label: string; clas
   };
   return (
     <button
+      data-sfx="none"
       onPointerDown={press}
       onPointerUp={release}
       onPointerCancel={release}

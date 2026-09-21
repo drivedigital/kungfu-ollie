@@ -8,6 +8,7 @@ interface Props {
   onQuit(): void;
   onRematch(): void;
   onReselect(): void;
+  onSettings(): void;
   showControls: boolean;
 }
 
@@ -94,7 +95,7 @@ function Key({ k }: { k: string }) {
   return <span className="key">{k}</span>;
 }
 
-export function HUD({ hud, onResume, onQuit, onRematch, onReselect, showControls }: Props) {
+export function HUD({ hud, onResume, onQuit, onRematch, onReselect, onSettings, showControls }: Props) {
   const banner = hud.banner;
   const isMatchEnd = hud.phase === "matchEnd";
   const combo = hud.p1.combo ? { side: "left", n: hud.p1.combo, color: hud.p1.color } : hud.p2.combo ? { side: "right", n: hud.p2.combo, color: hud.p2.color } : null;
@@ -178,7 +179,10 @@ export function HUD({ hud, onResume, onQuit, onRematch, onReselect, showControls
             <button onClick={onResume} className="w-full rounded-lg bg-cyan-400 py-2.5 font-display text-2xl tracking-wider text-black hover:bg-cyan-300">
               RESUME
             </button>
-            <button onClick={onQuit} className="w-full rounded-lg border border-white/20 py-2.5 font-display text-2xl tracking-wider text-white hover:bg-white/10">
+            <button data-sfx="none" onClick={onSettings} className="w-full rounded-lg border border-white/20 py-2.5 font-display text-2xl tracking-wider text-white hover:bg-white/10">
+              🔊 AUDIO SETTINGS
+            </button>
+            <button data-sfx="ui.back" onClick={onQuit} className="w-full rounded-lg border border-white/20 py-2.5 font-display text-2xl tracking-wider text-white hover:bg-white/10">
               QUIT TO MENU
             </button>
             <span className="text-xs text-white/40">
@@ -206,13 +210,13 @@ export function HUD({ hud, onResume, onQuit, onRematch, onReselect, showControls
               </span>
             </div>
             <div className="flex w-full flex-col gap-2 sm:flex-row">
-              <button onClick={onRematch} className="flex-1 rounded-lg bg-yellow-400 py-3 font-display text-2xl tracking-wider text-black hover:bg-yellow-300">
+              <button data-sfx="ui.start" onClick={onRematch} className="flex-1 rounded-lg bg-yellow-400 py-3 font-display text-2xl tracking-wider text-black hover:bg-yellow-300">
                 REMATCH
               </button>
-              <button onClick={onReselect} className="flex-1 rounded-lg bg-cyan-400 py-3 font-display text-2xl tracking-wider text-black hover:bg-cyan-300">
+              <button data-sfx="ui.transition" onClick={onReselect} className="flex-1 rounded-lg bg-cyan-400 py-3 font-display text-2xl tracking-wider text-black hover:bg-cyan-300">
                 CHANGE FIGHTERS
               </button>
-              <button onClick={onQuit} className="flex-1 rounded-lg border border-white/20 py-3 font-display text-2xl tracking-wider text-white hover:bg-white/10">
+              <button data-sfx="ui.back" onClick={onQuit} className="flex-1 rounded-lg border border-white/20 py-3 font-display text-2xl tracking-wider text-white hover:bg-white/10">
                 MENU
               </button>
             </div>
