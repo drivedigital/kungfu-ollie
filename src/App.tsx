@@ -1,0 +1,102 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Game, GameMode, HUDState } from "./game/Game";
+import { HUD } from "./components/HUD";
+import { SelectScreen, Setup, TitleScreen } from "./components/Menu";
+import { TouchControls } from "./components/TouchControls";
+
+type Screen = "title" | "select" | "fight";
+
+const DEFAULT_SETUP: Setup = {
+  mode: "cpu",
+  p1: "chicken",
+  p2: "buffalo",
+  arena: "wasteland",
+  difficulty: "normal",
+  roundsToWin: 2,
+};
+
+export default function App() {
+  const [screen, setScreen] = useState<Screen>("title");
+  const [setup, setSetup] = useState<Setup>(DEFAULT_SETUP);
+  const [hud, setHud] = useState<HUDState | null>(null);
+  const [isTouch, setIsTouch] = useState(false);
+  const gameRef = useRef<Game | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    setIsTouch(mq.matches);
+    const h = (e: MediaQueryListEvent) => setIsTouch(e.matches);
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, []);
+
+  // A fresh canvas (and WebGL context) per game instance keeps context handling simple.
+  const mode: GameMode = screen === "fight" ? setup.mode : "attract";
+  const gameKey = useMemo(
+    () =>
+      screen === "fight"
+        ? `fight-${mode}-${setup.arena}-${setup.p1}-${setup.p2}-${setup.difficulty}-${setup.roundsToWin}`
+        : `attract-${setup.arena}-${setup.p1}-${setup.p2}`,
+    [screen, mode, setup],
+  );
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const game = new Game(canvas, {
+      mode,
+      p1: setup.p1,
+      p2: setup.p2,
+      arena: setup.arena,
+      difficulty: setup.difficulty,
+      roundsToWin: setup.roundsToWin,
+      onState: setHud,
+    });
+    gameRef.current = game;
+    return () => {
+      game.dispose();
+      if (gameRef.current === game) gameRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameKey]);
+
+  const quit = useCallback(() => {
+    setHud(null);
+    setScreen("title");
+  }, []);
+  const reselect = useCallback(() => {
+    setHud(null);
+    setScreen("select");
+  }, []);
+  const resume = useCallback(() => gameRef.current?.setPaused(false), []);
+  const rematch = useCallback(() => gameRef.current?.restart(), []);
+
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-black">
+      <canvas key={gameKey} ref={canvasRef} className="absolute inset-0 h-full w-full" />
+
+      {screen === "title" && (
+        <TitleScreen
+          onStart={(m) => {
+            setSetup((s) => ({ ...s, mode: m }));
+            setScreen("select");
+          }}
+        />
+      )}
+      {screen === "select" && <SelectScreen setup={setup} onChange={setSetup} onFight={() => setScreen("fight")} onBack={() => setScreen("title")} />}
+
+      {screen === "fight" && hud && <HUD hud={hud} onResume={resume} onQuit={quit} onRematch={rematch} onReselect={reselect} showControls={!isTouch} />}
+      {screen === "fight" && isTouch && hud && !hud.paused && hud.phase !== "matchEnd" && <TouchControls />}
+
+      {screen === "fight" && hud && !hud.paused && hud.phase !== "matchEnd" && (
+        <button
+          onClick={() => gameRef.current?.setPaused(true)}
+          className="pointer-events-auto absolute left-1/2 top-[74px] -translate-x-1/2 rounded-full border border-white/15 bg-black/40 px-3 py-1 text-[10px] font-bold tracking-[0.3em] text-white/60 hover:bg-black/60 sm:top-[86px]"
+        >
+          PAUSE
+        </button>
+      )}
+    </div>
+  );
+}
