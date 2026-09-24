@@ -1,0 +1,22 @@
+{
+  "triangles": 28299,
+  "exported_vertices": 67229,
+  "materials": 1,
+  "double_sided": true,
+  "textures": [
+    {
+      "name": "texture_0",
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "name": "texture_0_metallic_roughness",
+      "width": 4096,
+      "height": 4096
+    }
+  ],
+  "normal_map": false,
+  "bytes": 25269452,
+  "skins": 0,
+  "animations": 0
+}

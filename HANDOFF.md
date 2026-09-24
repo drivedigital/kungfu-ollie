@@ -1,5 +1,7 @@
 # HANDOFF — Robo-Cluck vs Fluffalo (3D Arena Fighter)
 
+> **Kyoto / skinned-fighter branch:** Start with [`handoff/kyoto-v1/README.md`](handoff/kyoto-v1/README.md) for the new dog, corrected King Croak, Kyoto assets, provisional animation coverage and integration instructions. The description below documents the existing procedural game on `main`; the new assets are supplied for a subsequent build and are not yet wired into gameplay.
+
 > Entry point for any engineer or AI agent continuing this project.
 > Read this file first, then the focused documents in `docs/`.
 

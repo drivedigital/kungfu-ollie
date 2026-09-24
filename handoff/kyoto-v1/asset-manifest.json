@@ -1,0 +1,77 @@
+{
+  "status": "review assets; not yet integrated into game",
+  "assets": [
+    {
+      "path": "models/dog-chin-corrected.glb",
+      "bytes": 10636004,
+      "sha256": "7c26c7ffde6072029de434cb471450be652cf37fe48014778ef1e0479e36fe30",
+      "provenance": "User-provided Dog-Meshy model, Mixamo animations, local chin-weight correction",
+      "animations": [
+        "Boxing",
+        "Dual Weapon Combo",
+        "Front Twist Flip",
+        "Hurricane Kick",
+        "Martelo 2",
+        "Punching Bag",
+        "Run Forward",
+        "Run To Rolling",
+        "Skinning Test",
+        "Thriller Part 3"
+      ],
+      "skins": 1
+    },
+    {
+      "path": "models/kingcroak-corrected.glb",
+      "bytes": 20585104,
+      "sha256": "8b83ec59b88a3c772afbcd451df027d3f0023c60c357d0b782c57192af1d49cf",
+      "provenance": "User-provided KingCroak rig plus FrogAnimations FBX transfers and local correction variants",
+      "animations": [
+        "Boxing",
+        "Capoeira",
+        "Dancing Twerk",
+        "Dwarf Walk",
+        "Dying",
+        "Elbow Punch",
+        "Forward Jump",
+        "Hip Hop Dancing",
+        "Hook Punch",
+        "Hurricane Kick",
+        "Joyful Jump",
+        "Jump Backward",
+        "Jump",
+        "Jumping Rope",
+        "Jumping",
+        "Right Turn",
+        "Skinning Test",
+        "Swimming",
+        "Thriller Part 3",
+        "Idle \u00b7 softened",
+        "Victory \u00b7 floor corrected",
+        "Elbow Punch \u00b7 open hands",
+        "Hook Punch \u00b7 open hands",
+        "Capoeira \u00b7 floor corrected"
+      ],
+      "skins": 1
+    },
+    {
+      "path": "models/kyoto-cherry-tree-review.glb",
+      "bytes": 25269452,
+      "sha256": "ec8123638e09fe620c1dc97e590e6ba7617b64e0dd1d2089cc3d238a53c4f2c1",
+      "provenance": "User-supplied Meshy 7.1 cherry tree review remesh",
+      "animations": [],
+      "skins": 0
+    },
+    {
+      "path": "reference/kyoto-coliseum-gameplay-view.png",
+      "bytes": 2373239,
+      "sha256": "19fdbeaab663ea34c686b46a812ffb0d6407df8cdf31e7ab21f11a84d0d62cb0",
+      "provenance": "User-supplied Meshy-generated concept image"
+    },
+    {
+      "path": "reference/kyoto-audience-concept-panel.png",
+      "bytes": 2168964,
+      "sha256": "00420422b261ef69d06d87ceeea304dc678d07cd2ff81060dd0fa385a2d40312",
+      "provenance": "User-supplied Meshy-generated concept image"
+    }
+  ]
+}
