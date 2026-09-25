@@ -532,7 +532,7 @@ export class SkinnedRig extends CharacterRig {
   /* Tongue / props / charge glow                                        */
   /* ------------------------------------------------------------------ */
 
-  private updateTongue(t: number, _dt: number) {
+  private updateTongue(t: number, dt: number) {
     const tg = this.tongue;
     if (!tg) return;
     const def = this.binding.tongue!;
@@ -560,20 +560,18 @@ export class SkinnedRig extends CharacterRig {
         [1.15, 0],
       ]);
     }
-    tg.len += (target - tg.len) * (target > tg.len ? 0.55 : 0.3);
+    tg.len += (target - tg.len) * (1 - Math.exp(-dt * (target > tg.len ? 22 : 12)));
     const len = Math.max(def.rest, tg.len * def.maxLen);
     tg.group.visible = tg.len > 0.02;
     tg.group.scale.z = len;
     tg.tipMesh.scale.set(1, 1, 1 / Math.max(0.01, len));
     if (tg.bone) {
-      tg.bone.getWorldPosition(_v1);
+      tg.bone.localToWorld(_v1.copy(tg.offset));
       this.root.worldToLocal(_v1);
-      // mouth offset is defined in model space; rotate it by the root yaw and scale to game units
-      _v2.copy(tg.offset).applyQuaternion(this.root.quaternion).multiplyScalar(this.normScale);
-      tg.group.position.copy(_v1).add(_v2);
+      tg.group.position.copy(_v1);
       tg.bone.getWorldQuaternion(_q1);
       this.root.getWorldQuaternion(_q2);
-      tg.group.quaternion.copy(_q1.invert().multiply(_q2));
+      tg.group.quaternion.copy(_q2.invert().multiply(_q1));
     }
   }
 
@@ -640,9 +638,7 @@ export class SkinnedRig extends CharacterRig {
   override strikeWorld(move: string, out: THREE.Vector3): THREE.Vector3 {
     // the tongue tip is the real contact point for King Croak's lash and grab
     if (this.tongue && (move === "light" || move === "heavy") && this.tongue.len > 0.15) {
-      return out.copy(this.tongue.group.position).add(
-        _v1.set(0, 0, this.tongue.group.scale.z).applyQuaternion(this.root.quaternion),
-      );
+      return this.tongue.group.localToWorld(out.set(0, 0, 1));
     }
     const def = this.binding.sockets.strike[move] ?? this.binding.sockets.chest;
     return this.socketWorld(def, out, this.binding.height * 0.6);
@@ -650,9 +646,7 @@ export class SkinnedRig extends CharacterRig {
 
   override grabAnchorWorld(out: THREE.Vector3): THREE.Vector3 {
     if (this.tongue && this.tongue.len > 0.15) {
-      return out.copy(this.tongue.group.position).add(
-        _v1.set(0, 0, this.tongue.group.scale.z).applyQuaternion(this.root.quaternion),
-      );
+      return this.tongue.group.localToWorld(out.set(0, 0, 1));
     }
     return this.socketWorld(this.binding.sockets.grab ?? this.binding.sockets.chest, out, this.binding.height * 0.5);
   }
