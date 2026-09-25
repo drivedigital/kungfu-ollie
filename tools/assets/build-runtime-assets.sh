@@ -15,7 +15,6 @@
 #   resize   — cap texture dimensions (download size AND decoded GPU memory)
 #   webp     — EXT_texture_webp.  Colour/Roughness are lossy q90; normal maps use
 #              near-lossless so tangent-space detail survives.  Three r186 decodes WebP natively.
-b" form.|b" form.
 #   quantize — KHR_mesh_quantization for POSITION/NORMAL/TEXCOORD/WEIGHTS (skin joints untouched)
 #   meshopt  — EXT_meshopt_compression (Three needs MeshoptDecoder, wired in SkinnedRig/assets.ts)
 #

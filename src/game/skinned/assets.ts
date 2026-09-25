@@ -62,6 +62,7 @@ function loadOnce(url: string): Promise<GLTF | null> {
     return gltf;
   })().catch((err) => {
     console.warn("[assets] failed to load", url, err);
+    cache.delete(url);
     return null;
   });
   cache.set(url, p);

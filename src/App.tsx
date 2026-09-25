@@ -86,7 +86,14 @@ export default function App() {
     prepareAssets([setup.p1, setup.p2], setup.arena)
       .then((assets) => {
         if (cancelled) return;
-        if (assets.missing.length) console.warn("[app] missing assets:", assets.missing);
+        const missingFighters = [setup.p1, setup.p2].filter((id) =>
+          (id === "dog" || id === "toad") && !assets.fighters[id],
+        );
+        if (missingFighters.length) {
+          setLoadError(`Could not load ${missingFighters.join(" and ")}. Check the connection and reload to retry.`);
+          return;
+        }
+        if (assets.missing.length) console.warn("[app] missing stage assets:", assets.missing);
         const game = new Game(canvas, {
           mode,
           p1: setup.p1,

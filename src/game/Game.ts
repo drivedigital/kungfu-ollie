@@ -91,7 +91,7 @@ function makeRig(id: CharId, assets?: PreparedAssets): CharacterRig {
   if (id === "buffalo") return new FluffyBuffalo();
   if (id === "toad") return new KingCroak();
   if (id === "ewe") return new ScrapEwe();
-  if (id === "dog") return new FluffyBuffalo(); // placeholder: no procedural dog exists yet
+  if (id === "dog") throw new Error("Dog model is unavailable. Reload to retry the download.");
   throw new Error(`No rig available for ${id}`);
 }
 
