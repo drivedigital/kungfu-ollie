@@ -641,11 +641,13 @@ const R: Record<SynthId, Recipe> = {
     for (let k = 0; k < 40; k++) addVoice(c, c.rnd() * 6.9, 0.02, () => 4600, (t) => ar(t, 0.02, 0.003, 0.01) * 0.04, { timbre: "sine" });
     return makeLoop(normalize(c.out, 0.5), 0.6, sr);
   },
+  "ambient.kyoto": (sr, seed) => R["ambient.meadow"](sr, seed),
   // music slots are handled by the realtime sequencer; these short jingles are only used by "test"
   "music.menu": (sr, seed) => R["fanfare.short"](sr, seed),
   "music.wasteland": (sr, seed) => R["fanfare.short"](sr, seed),
   "music.foundry": (sr, seed) => R["fanfare.short"](sr, seed),
   "music.meadow": (sr, seed) => R["fanfare.short"](sr, seed),
+  "music.kyoto": (sr, seed) => R["fanfare.short"](sr, seed),
 };
 
 const cache = new Map<string, Float32Array>();

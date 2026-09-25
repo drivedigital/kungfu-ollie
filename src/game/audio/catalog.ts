@@ -52,10 +52,12 @@ export type SynthId =
   | "ambient.wasteland"
   | "ambient.foundry"
   | "ambient.meadow"
+  | "ambient.kyoto"
   | "music.menu"
   | "music.wasteland"
   | "music.foundry"
-  | "music.meadow";
+  | "music.meadow"
+  | "music.kyoto";
 
 export interface SoundSlot {
   id: string;
@@ -71,26 +73,28 @@ export interface SoundSlot {
   cut?: number;
 }
 
-export const CHAR_IDS: CharId[] = ["chicken", "buffalo", "ewe", "toad"];
-export const CHAR_LABEL: Record<CharId, string> = { chicken: "Robo-Cluck", buffalo: "Fluffalo", ewe: "Scrap-Ewe", toad: "King Croak" };
-export const ARENA_IDS: ArenaId[] = ["wasteland", "foundry", "meadow"];
-export const ARENA_LABEL: Record<ArenaId, string> = { wasteland: "Wasteland Sunset", foundry: "Scrapyard Foundry", meadow: "Golden Meadow" };
+export const CHAR_IDS: CharId[] = ["chicken", "buffalo", "ewe", "toad", "dog"];
+export const CHAR_LABEL: Record<CharId, string> = { chicken: "Robo-Cluck", buffalo: "Fluffalo", ewe: "Scrap-Ewe", toad: "King Croak", dog: "Ollie" };
+export const ARENA_IDS: ArenaId[] = ["wasteland", "foundry", "meadow", "kyoto"];
+export const ARENA_LABEL: Record<ArenaId, string> = { wasteland: "Wasteland Sunset", foundry: "Scrapyard Foundry", meadow: "Golden Meadow", kyoto: "Kyoto Coliseum" };
 
-const VOICE_LABEL: Record<CharId, string> = { chicken: "cluck / crow", buffalo: "snort / bellow", ewe: "bleat", toad: "croak" };
-const SPECIAL_LABEL: Record<CharId, string> = { chicken: "Laser Gaze zap", buffalo: "Stampede rumble", ewe: "Missile launch", toad: "Toxic belch" };
-const SPECIAL_SYNTH: Record<CharId, SynthId> = { chicken: "special.laser", buffalo: "special.stampede", ewe: "special.missiles", toad: "special.belch" };
+const VOICE_LABEL: Record<CharId, string> = { chicken: "cluck / crow", buffalo: "snort / bellow", ewe: "bleat", toad: "croak", dog: "bark / growl" };
+const SPECIAL_LABEL: Record<CharId, string> = { chicken: "Laser Gaze zap", buffalo: "Stampede rumble", ewe: "Missile launch", toad: "Toxic belch", dog: "Twin Fang Rush" };
+const SPECIAL_SYNTH: Record<CharId, SynthId> = { chicken: "special.laser", buffalo: "special.stampede", ewe: "special.missiles", toad: "special.belch", dog: "whoosh.hard" };
 /** organic fighters "clang" is a body block, robots ring like metal */
 const CLANG_SYNTH: Record<CharId, [SynthId, SynthId]> = {
   chicken: ["clang.soft", "clang.hard"],
   ewe: ["clang.soft", "clang.hard"],
   buffalo: ["slap.soft", "slap.hard"],
   toad: ["slap.soft", "slap.hard"],
+  dog: ["slap.soft", "slap.hard"],
 };
 const KNOCK_SYNTH: Record<CharId, [SynthId, SynthId]> = {
   chicken: ["knock.soft", "knock.hard"],
   ewe: ["knock.soft", "knock.hard"],
   buffalo: ["knock.soft", "knock.hard"],
   toad: ["squelch.soft", "squelch.hard"],
+  dog: ["knock.soft", "knock.hard"],
 };
 
 function fighterSlots(c: CharId): SoundSlot[] {
@@ -116,9 +120,9 @@ function fighterSlots(c: CharId): SoundSlot[] {
     s("knock.hard", "Knock — hard (launcher / knockdown)", KNOCK_SYNTH[c][1], 1, undefined, 1.6),
     s("thud.soft", "Thud — soft (landing)", "thud.soft", 0.7, 0.12, 1.0),
     s("thud.hard", "Thud — hard (slam / floor impact)", "thud.hard", 1, 0.12, 1.6),
-    s("hiya.soft", `Battle cry — soft (${VOICE_LABEL[c]})`, `voice.${c}.soft` as SynthId, 0.8, 0.25, 1.6),
-    s("hiya.hard", `Battle cry — hard (${VOICE_LABEL[c]})`, `voice.${c}.hard` as SynthId, 0.95, 0.4, 2.6),
-    s("intro", "Round intro cry", `voice.${c}.hard` as SynthId, 0.95, 1, 3),
+    s("hiya.soft", `Battle cry — soft (${VOICE_LABEL[c]})`, `voice.${c === "dog" ? "buffalo" : c}.soft` as SynthId, 0.8, 0.25, 1.6),
+    s("hiya.hard", `Battle cry — hard (${VOICE_LABEL[c]})`, `voice.${c === "dog" ? "buffalo" : c}.hard` as SynthId, 0.95, 0.4, 2.6),
+    s("intro", "Round intro cry", `voice.${c === "dog" ? "buffalo" : c}.hard` as SynthId, 0.95, 1, 3),
     s("special", `Special — ${SPECIAL_LABEL[c]}`, SPECIAL_SYNTH[c], 1, 0.3, 2.6),
   ];
 }

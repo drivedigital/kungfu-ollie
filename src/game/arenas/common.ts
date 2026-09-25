@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { FX } from "../FX";
 
-export type ArenaId = "wasteland" | "foundry" | "meadow";
+export type ArenaId = "wasteland" | "foundry" | "meadow" | "kyoto";
 
 export interface ArenaInfo {
   id: ArenaId;
@@ -14,6 +14,7 @@ export const ARENAS: ArenaInfo[] = [
   { id: "wasteland", name: "Wasteland Sunset", subtitle: "Cracked earth · Storm front · Tumbleweeds", gradient: "linear-gradient(160deg,#1f3540 0%,#c8562a 55%,#ffb347 100%)" },
   { id: "foundry", name: "Scrapyard Foundry", subtitle: "Molten steel · Overhead crane · Sparks", gradient: "linear-gradient(160deg,#04161c 0%,#0f3a44 50%,#e0b520 100%)" },
   { id: "meadow", name: "Golden Meadow", subtitle: "Swaying wheat · Wildflowers · Butterflies", gradient: "linear-gradient(160deg,#8fb0dc 0%,#f6c98f 55%,#8a9a3e 100%)" },
+  { id: "kyoto", name: "Kyoto Coliseum", subtitle: "Cherry petals · Stone courtyard · Kung fu crowd", gradient: "linear-gradient(160deg,#352942 0%,#b65f78 55%,#f8bb92 100%)" },
 ];
 
 export interface Arena {

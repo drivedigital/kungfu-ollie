@@ -18,7 +18,7 @@ export interface Setup {
 export function TitleScreen({ onStart, onSettings }: { onStart(mode: Setup["mode"]): void; onSettings(): void }) {
   return (
     <div className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-between bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.15)_0%,rgba(0,0,0,0.7)_100%)] px-6 py-8">
-      <div className="mt-2 text-[11px] font-bold tracking-[0.5em] text-white/60 fade-up">PROCEDURAL 3D ARENA FIGHTER</div>
+      <div className="mt-2 text-[11px] font-bold tracking-[0.5em] text-white/60 fade-up">3D ARENA FIGHTER</div>
       <div className="flex flex-col items-center text-center">
         <div className="font-display text-[clamp(3rem,10vw,7.5rem)] leading-[0.9] text-cyan-300 text-stroke pulse-glow fade-up">ROBO-CLUCK</div>
         <div className="font-display text-[clamp(1.4rem,4vw,2.6rem)] leading-none text-white/85 text-stroke-thin fade-up" style={{ animationDelay: "0.1s" }}>
@@ -28,8 +28,7 @@ export function TitleScreen({ onStart, onSettings }: { onStart(mode: Setup["mode
           FLUFFALO
         </div>
         <p className="mt-4 max-w-md text-sm text-white/70 fade-up" style={{ animationDelay: "0.3s" }}>
-          Pick from four brawlers — a laser-eyed steel rooster, the fluffiest bison in the meadow, a sheep pilot in a missile-toting scrap mech, and a
-          bog toad king with a sticky tongue and a toxic croak. Three arenas, best-of-N rounds, super moves and slow-motion knockouts.
+          Choose among five fighters, including Ollie and King Croak, and battle across four arenas. Best-of-N rounds, super moves and slow-motion knockouts.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row fade-up" style={{ animationDelay: "0.4s" }}>
           <button

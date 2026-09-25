@@ -1,4 +1,4 @@
-export type CharId = "chicken" | "buffalo" | "ewe" | "toad";
+export type CharId = "chicken" | "buffalo" | "ewe" | "toad" | "dog";
 export type MoveSlot = "light" | "heavy" | "special" | "air";
 export type Band = "high" | "mid" | "low";
 
@@ -329,7 +329,29 @@ const toad: FighterConfig = {
   },
 };
 
-export const FIGHTERS: Record<CharId, FighterConfig> = { chicken, buffalo, ewe, toad };
+const dog: FighterConfig = {
+  id: "dog", name: "OLLIE", title: "Twin-Fang Kung Fu", maxHp: 100,
+  walkSpeed: 3.7, backSpeed: 2.8, jumpVel: 11.2, weight: 1,
+  width: 0.7, height: 2.15, color: "#4ab6f4", colorHex: 0x4ab6f4,
+  stats: { speed: 4, power: 3, tough: 3, icon: "🐕" },
+  moveNames: { light: "Snap Strike", heavy: "Martelo Kick", special: "Twin Fang Rush", air: "Pounce Slam" },
+  moves: {
+    light: { slot: "light", name: "Snap Strike", duration: 0.42,
+      hits: [{ start: 0.14, end: 0.23, damage: 6, reach: 1.6, band: "high", knockback: 3.5, hitstun: 0.36, blockstun: 0.2, shake: 0.15, hitstop: 0.06 }],
+      meterGain: 6, cancel: { start: 0.21, end: 0.39 }, fx: "jab", lunge: { start: 0.1, end: 0.2, speed: 2.5 } },
+    heavy: { slot: "heavy", name: "Martelo Kick", duration: 0.82,
+      hits: [{ start: 0.29, end: 0.42, damage: 13, reach: 1.95, band: "mid", knockback: 6.5, launch: 6, hitstun: 0.6, blockstun: 0.32, shake: 0.4, hitstop: 0.1 }],
+      meterGain: 10, fx: "kick", lunge: { start: 0.2, end: 0.31, speed: 2.8 } },
+    special: { slot: "special", name: "Twin Fang Rush", duration: 1.1,
+      hits: [{ start: 0.4, end: 0.54, damage: 18, reach: 2.2, band: "mid", knockback: 9, launch: 5, hitstun: 0.72, blockstun: 0.42, shake: 0.55, hitstop: 0.12 }],
+      meterCost: 50, meterGain: 0, fx: "uppercut", lunge: { start: 0.35, end: 0.48, speed: 5 } },
+    air: { slot: "air", name: "Pounce Slam", duration: 0.7,
+      hits: [{ start: 0.12, end: 0.5, damage: 10, reach: 1.55, band: "mid", knockback: 5, launch: 3, hitstun: 0.48, blockstun: 0.28, shake: 0.32, hitstop: 0.09 }],
+      meterGain: 8, fx: "flop", impulse: { x: 4, y: -6 } },
+  },
+};
+
+export const FIGHTERS: Record<CharId, FighterConfig> = { chicken, buffalo, ewe, toad, dog };
 
 export const BAND_RANGES: Record<Band, [number, number]> = {
   high: [0.9, 2.4],

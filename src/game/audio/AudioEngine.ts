@@ -570,7 +570,7 @@ export class AudioEngine {
 
   private themeFor(slot: SoundSlot): MusicTheme {
     const t = slot.synth.replace("music.", "");
-    return (["menu", "wasteland", "foundry", "meadow"].includes(t) ? t : "menu") as MusicTheme;
+    return (["menu", "wasteland", "foundry", "meadow"].includes(t) ? t : t === "kyoto" ? "meadow" : "menu") as MusicTheme;
   }
 
   playMusic(id: string) {

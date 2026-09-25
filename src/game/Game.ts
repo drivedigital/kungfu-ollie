@@ -9,6 +9,7 @@ import { RobotChicken } from "./characters/RobotChicken";
 import { FluffyBuffalo } from "./characters/FluffyBuffalo";
 import { ScrapEwe } from "./characters/ScrapEwe";
 import { KingCroak } from "./characters/KingCroak";
+import { SkinnedFighter, SkinnedSource } from "./characters/SkinnedFighter";
 import { CharId, FIGHTERS, HitWindow, MoveDef } from "./moves";
 import { FX } from "./FX";
 import { MissileSystem } from "./Projectiles";
@@ -19,6 +20,7 @@ import { ARENA_BOUNDS, Arena, ArenaId } from "./arenas/common";
 import { buildWasteland } from "./arenas/Wasteland";
 import { buildFoundry } from "./arenas/Foundry";
 import { buildMeadow } from "./arenas/Meadow";
+import { buildKyoto } from "./arenas/Kyoto";
 import { audio } from "./audio/AudioEngine";
 
 export type GameMode = "attract" | "cpu" | "2p";
@@ -68,15 +70,19 @@ export interface GameOptions {
   difficulty: Difficulty;
   roundsToWin: number;
   onState(s: HUDState): void;
+  skinned?: Partial<Record<"dog" | "toad", SkinnedSource>>;
 }
 
 const ROUND_TIME = 99;
 
-function makeRig(id: CharId): CharacterRig {
+function makeRig(id: CharId, sources?: GameOptions["skinned"]): CharacterRig {
+  if (id === "dog" && sources?.dog) return new SkinnedFighter("dog", sources.dog);
+  if (id === "toad" && sources?.toad) return new SkinnedFighter("toad", sources.toad);
   if (id === "chicken") return new RobotChicken();
   if (id === "buffalo") return new FluffyBuffalo();
   if (id === "toad") return new KingCroak();
-  return new ScrapEwe();
+  if (id === "ewe") return new ScrapEwe();
+  throw new Error(`Skinned fighter ${id} was not loaded`);
 }
 
 interface MissileSpawn {
@@ -109,6 +115,8 @@ function buildArena(id: ArenaId): Arena {
       return buildFoundry();
     case "meadow":
       return buildMeadow();
+    case "kyoto":
+      return buildKyoto();
     default:
       return buildWasteland();
   }
@@ -190,8 +198,8 @@ export class Game {
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
 
-    const f1 = new Fighter(FIGHTERS[opts.p1], makeRig(opts.p1));
-    const f2 = new Fighter(FIGHTERS[opts.p2], makeRig(opts.p2));
+    const f1 = new Fighter(FIGHTERS[opts.p1], makeRig(opts.p1, opts.skinned));
+    const f2 = new Fighter(FIGHTERS[opts.p2], makeRig(opts.p2, opts.skinned));
     this.fighters = [f1, f2];
     this.scene.add(f1.rig.root, f2.rig.root);
 
@@ -267,9 +275,10 @@ export class Game {
     this.missiles.dispose();
     this.gas.dispose();
     this.arena.dispose();
+    for (const f of this.fighters) if (f.rig instanceof SkinnedFighter) f.rig.dispose();
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;
-      if (m.geometry) m.geometry.dispose();
+      if (m.geometry && !m.userData.sharedGeometry) m.geometry.dispose();
     });
     this.composer.dispose();
     this.renderer.dispose();
@@ -322,8 +331,13 @@ export class Game {
     const final = this.opts.roundsToWin > 1 && a.roundsWon === this.opts.roundsToWin - 1 && b.roundsWon === this.opts.roundsToWin - 1;
     this.setBanner(final ? "FINAL ROUND" : `ROUND ${this.round}`, final ? "Winner takes all" : undefined, true);
     // cinematic camera start: low angle beside player one
-    this.camPos.set(a.pos.x - 2.5, 0.7, 4.5);
-    this.camLook.set(a.pos.x + 1, 1.4, 0);
+    if (this.opts.arena === "kyoto") {
+      this.camPos.set(0, 2.4, 10.5);
+      this.camLook.set(0, 1.2, 0);
+    } else {
+      this.camPos.set(a.pos.x - 2.5, 0.7, 4.5);
+      this.camLook.set(a.pos.x + 1, 1.4, 0);
+    }
     // audio: bell + staggered intro cries
     audio.setMusicRate(1);
     audio.play("announce.round");
@@ -800,7 +814,11 @@ export class Game {
     const look = new THREE.Vector3();
     let k = 1 - Math.exp(-raw * 5);
 
-    if (this.phase === "attract") {
+    if (this.phase === "attract" && this.opts.arena === "kyoto") {
+      target.set(Math.sin(this.time * 0.18) * 1.1, 2.4, 11);
+      look.set(0, 1.2, 0);
+      k = 1 - Math.exp(-raw * 2);
+    } else if (this.phase === "attract") {
       const ang = this.time * 0.11;
       target.set(Math.sin(ang) * 9.5, 2.4 + Math.sin(this.time * 0.35) * 0.5, Math.cos(ang) * 9.5);
       look.set(0, 1.1, 0);

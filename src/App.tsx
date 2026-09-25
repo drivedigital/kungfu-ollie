@@ -5,6 +5,7 @@ import { SelectScreen, Setup, TitleScreen } from "./components/Menu";
 import { TouchControls } from "./components/TouchControls";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { audio } from "./game/audio/AudioEngine";
+import { loadSkinned, SkinnedId, SkinnedSource } from "./game/characters/SkinnedFighter";
 
 type Screen = "title" | "select" | "fight";
 
@@ -23,6 +24,7 @@ export default function App() {
   const [hud, setHud] = useState<HUDState | null>(null);
   const [isTouch, setIsTouch] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const gameRef = useRef<Game | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -78,19 +80,32 @@ export default function App() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const game = new Game(canvas, {
-      mode,
-      p1: setup.p1,
-      p2: setup.p2,
-      arena: setup.arena,
-      difficulty: setup.difficulty,
-      roundsToWin: setup.roundsToWin,
-      onState: setHud,
-    });
-    gameRef.current = game;
+    let cancelled = false;
+    setLoadError(null);
+    const needed = [...new Set([setup.p1, setup.p2].filter((id): id is SkinnedId => id === "dog" || id === "toad"))];
+    Promise.all(needed.map(async (id) => [id, await loadSkinned(id)] as const))
+      .then((entries) => {
+        if (cancelled) return;
+        const skinned = Object.fromEntries(entries) as Partial<Record<SkinnedId, SkinnedSource>>;
+        const game = new Game(canvas, {
+          mode,
+          p1: setup.p1,
+          p2: setup.p2,
+          arena: setup.arena,
+          difficulty: setup.difficulty,
+          roundsToWin: setup.roundsToWin,
+          onState: setHud,
+          skinned,
+        });
+        gameRef.current = game;
+      })
+      .catch((error) => {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : String(error));
+      });
     return () => {
-      game.dispose();
-      if (gameRef.current === game) gameRef.current = null;
+      cancelled = true;
+      gameRef.current?.dispose();
+      gameRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameKey]);
@@ -114,6 +129,7 @@ export default function App() {
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
       <canvas key={gameKey} ref={canvasRef} className="absolute inset-0 h-full w-full" />
+      {loadError && <div className="absolute left-4 top-4 z-50 rounded bg-red-950/90 p-3 text-sm text-white">Could not load fighter: {loadError}</div>}
 
       {screen === "title" && (
         <TitleScreen
