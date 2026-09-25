@@ -1,0 +1,43 @@
+{
+  "source": "User-supplied Qwen 3.8 Max threejs-kungfu-game-development.zip",
+  "status": "Unmodified reference source; not imported by the application; review before use",
+  "excluded": "All exported GLBs are corrupted and intentionally excluded. Next.js and database sources are excluded except GameShell.tsx for UI reference.",
+  "files": [
+    {
+      "path": "reference/src/components/GameShell.tsx",
+      "sha256": "b0b838ed564fb6ba7de3d11ee3b4ceda009982910e9a17a689fdf9ff871f613c"
+    },
+    {
+      "path": "reference/src/game/Dog.ts",
+      "sha256": "cc7330873a2d4b273a92e7d048f3387e8c1321edbb27b104c759fce29d54e7c6"
+    },
+    {
+      "path": "reference/src/game/Game.ts",
+      "sha256": "f571de59d4334936050eb6d0b5e3e493428354afe762fc5c641516d4b810f7c5"
+    },
+    {
+      "path": "reference/src/game/arenas/Kyoto.ts",
+      "sha256": "3045af7d303602ef5c65ebd1b6f61ef330fb2b8bcedbd07e6421156bab3a35a7"
+    },
+    {
+      "path": "reference/src/game/arenas/common.ts",
+      "sha256": "98fc0b6091df2193b5ab4ee5c171b13dcc1dd4f7851da9792adb2a626bf3cc38"
+    },
+    {
+      "path": "reference/src/game/moves.ts",
+      "sha256": "5a3b0ad337ce527903d2d900ce5600f23ec54f279929fdacb244621b7db12876"
+    },
+    {
+      "path": "reference/src/game/skinned/SkinnedRig.ts",
+      "sha256": "ce5614882a93b6c741615e16437bf4ec29a99174d888a3df00090284703453b4"
+    },
+    {
+      "path": "reference/src/game/skinned/assets.ts",
+      "sha256": "2284bacee7cb89355fb1e27462f5d5b9b20f09c149baa5a84a3f9b299c4ff174"
+    },
+    {
+      "path": "reference/src/game/skinned/bindings.ts",
+      "sha256": "b4c1b6bcd5701a086a11d87419388fe849829f2a5e780d9772ffd63f9cc1d419"
+    }
+  ]
+}
