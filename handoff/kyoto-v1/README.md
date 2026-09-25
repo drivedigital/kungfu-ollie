@@ -2,6 +2,8 @@
 
 This branch is an **asset and implementation handoff**, not a claim that the fighters or stage are playable yet. It is based on `main` at `027c08e4`. The requested build is: add the corrected dog as a new fighter, replace the procedural toad presentation with the corrected skinned King Croak, and add a basic Kyoto Coliseum stage while retaining the current combat rules and the three existing arenas. The A18-or-newer Apple mobile device is the performance target; measure on hardware before calling the work complete.
 
+Read [`../../docs/09-SKINNED-ANIMATION-CONTRACT.md`](../../docs/09-SKINNED-ANIMATION-CONTRACT.md) for the binding model, exact runtime state durations, current King Croak attack timings and GLB/FBX rules. It distinguishes current code from the planned skinned implementation.
+
 ## Supplied files
 
 | File | Contents | Status |

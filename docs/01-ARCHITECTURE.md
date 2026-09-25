@@ -1,5 +1,7 @@
 # 01 — Architecture
 
+> **Skinned-character extension (planned on the Kyoto handoff branch):** The checked-in game still uses procedural `CharacterRig` implementations and synchronous rig creation. Imported GLB/FBX clips will be adapted behind the same game-facing character contract, with asset preloading before match construction. See [`09-SKINNED-ANIMATION-CONTRACT.md`](09-SKINNED-ANIMATION-CONTRACT.md). References below to procedural meshes describe the current implementation, not an asset-format requirement.
+
 ## Layering
 
 ```

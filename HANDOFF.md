@@ -30,6 +30,7 @@ Modes: VS CPU (easy/normal/hard), local 2-player, attract-mode background on men
 | [`docs/06-TESTING-DEBUGGING.md`](docs/06-TESTING-DEBUGGING.md) | verify changes headlessly, use debug hooks, known gotchas, performance notes |
 | [`docs/07-BACKLOG.md`](docs/07-BACKLOG.md) | pick up next features, known limitations and technical debt |
 | [`docs/08-AUDIO.md`](docs/08-AUDIO.md) | music/SFX engine, source tiers (CORS vs streaming vs synth), slot catalogue, event→sound map, settings page, asset sourcing |
+| [`docs/09-SKINNED-ANIMATION-CONTRACT.md`](docs/09-SKINNED-ANIMATION-CONTRACT.md) | integrate skinned GLBs and keyframed clips, map all 16 game states, align move events and validate imported fighters |
 
 ## 60-second orientation
 
@@ -111,5 +112,4 @@ Touch devices (`pointer: coarse`) get on-screen controls for P1 only.
   when authoring geometry/animations.
 - Time is seconds. Attack timings in `moves.ts` are seconds from `startMove`.
 - Colours: `0xRRGGBB` numbers in engine code, `#rrggbb` strings for UI/HUD (`FighterConfig` has both).
-- Every character has the same **16 animation names** (see `docs/03-CHARACTERS.md`). `Fighter.setState`
-  maps state → animation name 1:1 except `blockstun → "block"`, `grabbed → "launched"`, and attacks → the move slot name.
+- Every character must handle the same **16 game animation state keys** (see `docs/03-CHARACTERS.md` and `docs/09-SKINNED-ANIMATION-CONTRACT.md`). A skinned GLB's clip names may differ; bindings map source clips or authored overlays to the keys. `Fighter.setState` uses `blockstun → "block"`, `grabbed → "launched"`, and attacks → the move slot name.

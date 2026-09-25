@@ -3,6 +3,8 @@
 All rules below are implemented in `src/game/Fighter.ts` unless noted. All tunables are in
 `src/game/moves.ts`.
 
+Animation implementation may be procedural poses or imported skinned/keyframed clips. The state machine and `moves.ts` timing remain authoritative in either case; see [`09-SKINNED-ANIMATION-CONTRACT.md`](09-SKINNED-ANIMATION-CONTRACT.md) for clip binding, retiming and root-motion rules. That adapter is specified but not yet implemented in this branch.
+
 ## 1. Fighter state machine
 
 `FighterState`:
@@ -29,6 +31,7 @@ All rules below are implemented in `src/game/Fighter.ts` unless noted. All tunab
 
 State → animation mapping (`setState(s, anim?)`): identical names, except `blockstun → "block"`,
 `grabbed → "launched"`, and attacks play the **slot name** (`"light" | "heavy" | "special" | "air"`).
+These are game state keys. An imported GLB may use different clip names; its binding table translates them. A clip's original duration does not change `stateTime`, hit windows or move exit.
 
 ### Input → action priority (grounded neutral states)
 1. attacks (`tryAttack`: special (if meter) > heavy > light) — edge-triggered

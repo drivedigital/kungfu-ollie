@@ -100,6 +100,7 @@ gas → hit → poison drain → "POISONED" HUD tag; missiles homing and detonat
 - The first time a **new light count** appears (e.g. an FX `flash` point light in an arena that never had one)
   three recompiles affected materials → a one-frame hitch; harmless.
 - `Rig` pose values are **offsets from rest**. Symptoms of forgetting: limbs double-rotated, ears folded.
+- The rest-offset rule above applies to current procedural rigs. For skinned rigs, validate semantic bone maps, quaternion transfer, bind/rest alignment, in-place locomotion, two-instance skeleton isolation, clip interruption, and texture/material lifetime as specified in [`09-SKINNED-ANIMATION-CONTRACT.md`](09-SKINNED-ANIMATION-CONTRACT.md). Imported source clip length never overrides `moves.ts` hit timing.
 - `Rig.play(name, true)` resets `time`; `Fighter.setState` always forces, so re-entering `idle` restarts the
   idle cycle (intentional).
 - `rig.snap()` is called on `reset()`; if a new character's `idle` depends on `tick`-computed values,

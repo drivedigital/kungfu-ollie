@@ -1,78 +1,57 @@
 # 03 — Characters: Rig System & Authoring Guide
 
-## 1. The rig system (`src/game/Rig.ts`)
+## 1. Character animation: current implementation and supported target
 
-A character is a **procedural mesh hierarchy** whose named joints are driven by **pose functions**
-evaluated every frame and **blended exponentially** toward the target. There are no keyframe clips or
-skinned meshes; everything is code.
+The **currently implemented** fighters use a procedural mesh hierarchy in `src/game/Rig.ts`: named `Object3D` joints, rest-relative pose functions, and exponential blending. This is one implementation of the `CharacterRig` game-facing contract, **not a restriction on future characters**. The dog and imported King Croak are intended to use skinned GLB meshes and keyframed `AnimationClip`s through a compatible adapter. Their runtime integration is specified in [`09-SKINNED-ANIMATION-CONTRACT.md`](09-SKINNED-ANIMATION-CONTRACT.md) and is not yet present in the checked-in game.
+
+The 16 **required state keys** are `idle walkF walkB jump block light heavy special air hit launched down ko getup victory intro`. They are requests made by `Fighter`, not required filenames inside a GLB. `blockstun` uses `block`; `grabbed` uses `launched`; attacks use their slot key. The imported dog and frog GLBs contain source clips with names such as `Boxing`, `Dwarf Walk`, and `Jump`. A per-character binding maps these source clips, trimmed ranges, authored replacements or procedural overlays to the game keys. Every state must have meaningful behavior before the character is called game-ready.
+
+The existing procedural `Rig` still works as follows:
 
 ```ts
 class Rig {
-  root: THREE.Group;                       // placed/rotated/scaled by Fighter each frame
-  joints: Record<string, Object3D>;        // registered via joint(name, obj, parent)
-  rest: Record<string, RestPose>;          // captured at registration (position/rotation/scale)
-  anims: Record<string, AnimFn>;           // name → (t, pose, ctx) => void
-  blendSpeed: Record<string, number>;      // per-animation blend rate (default 14)
-  instant: Set<string>;                    // joints that snap instead of blending
-  play(name, force?)                       // switches animation, resets its local time
-  update(dt, ctx)                          // evaluates anim → pose, eases joints toward rest+offset
-  snap(ctx)                                // apply current pose instantly (used on reset)
-  flash(amount)                            // white damage flash on registered materials (decays e^(−12dt))
-  tintAmount / tintColor                   // persistent status glow (poison), lerped by Fighter
-  registerFlash(materials[])               // which MeshStandardMaterials flash/tint
+  root: THREE.Group;                       // placed/rotated/scaled by Fighter
+  joints: Record<string, Object3D>;        // registered procedural joints
+  rest: Record<string, RestPose>;          // captured position/rotation/scale
+  anims: Record<string, AnimFn>;           // state → (t, pose, ctx) => void
+  blendSpeed: Record<string, number>;      // exponential blend rate, default 14
+  instant: Set<string>;                    // snap selected joints
+  play(name, force?)                       // switches state and resets local time
+  update(dt, ctx)                          // evaluates and blends pose
+  snap(ctx)                                // reset-time instantaneous pose
+  flash(amount)                            // transient damage flash
+  tintAmount / tintColor                   // persistent status glow
+  registerFlash(materials[])               // materials affected by flash/tint
 }
 type AnimFn = (t: number, p: Pose, c: AnimCtx) => void;
-type Pose = Record<jointName, { rx?,ry?,rz?, px?,py?,pz?, s?,sx?,sy?,sz? }>;   // OFFSETS from rest
+type Pose = Record<jointName, { rx?,ry?,rz?, px?,py?,pz?, s?,sx?,sy?,sz? }>;
 interface AnimCtx { vx; vy; grounded; fwd; facing; hpRatio; seed }
 ```
 
-Key semantics:
-- Pose values are **offsets from the rest pose** (rotations add, positions add, scales multiply).
-  A joint not mentioned in a pose eases back to rest.
-- `t` passed to an `AnimFn` is **seconds since that animation started** (reset by `play`), so attack
-  animations line up with `HitWindow.start/end` in `moves.ts` by construction.
-- Blend: `k = 1 − e^(−blendSpeed·dt)`. Attack anims use high speeds (18–26) for snap, idles low (6–7).
-  Joints in `instant` (e.g. King Croak's tongue/jaw/sac) apply the pose with `k = 1`.
-- Curve helpers for authoring: `kf(t, [[time,value],...], ease?)` piecewise smooth keyframes,
-  `pulse(t, start, peak, end)` impulse envelope, `shiver(t, freq, decay)` decaying oscillation,
-  `smooth/easeIn/easeOut`.
+For procedural poses, values are offsets from rest, `t` is seconds since state entry, and blending uses `k = 1 − e^(−blendSpeed·dt)`. `kf`, `pulse`, `shiver`, `smooth`, `easeIn` and `easeOut` are authoring helpers. This implementation uses Euler offsets because its joints are simple; the skinned path uses quaternion tracks for bone animation.
 
-### `CharacterRig` contract (what `Fighter`/`Game` call)
+### `CharacterRig` game-facing contract
 
 ```ts
 abstract class CharacterRig extends Rig {
-  abstract readonly accent: number;      // UI/FX colour (hit light, KO ring)
-  abstract readonly sparkColor: number;  // hit spark colour
-  abstract chestWorld(out): Vector3;     // centre of mass (KO embers, poison bubbles, missile target uses pos instead)
-  abstract strikeWorld(move, out): Vector3;   // contact point for a move slot ("light"|"heavy"|"special"|"air")
-  abstract tick(dt, time, fx|null, state): void; // per-frame secondary motion: glow pulses, vents, blinking, fur uniforms
-  charge = 0;                            // set by the special animation (0..1) → eyes/core flare in tick
-  impulse(amount) {}                     // landings / swings → fur jiggle (override if you have secondary motion)
-  grabAnchorWorld(out) → chestWorld      // where a grabbed victim is held (override for grapplers)
+  abstract readonly accent: number;
+  abstract readonly sparkColor: number;
+  abstract chestWorld(out): Vector3;
+  abstract strikeWorld(move, out): Vector3;
+  abstract tick(dt, time, fx|null, state): void;
+  charge = 0;
+  impulse(amount) {}
+  grabAnchorWorld(out) → chestWorld;
 }
 ```
 
-`fx` in `tick` may be `null` (rig previews); always guard.
+`Fighter` also calls inherited `play`, `update`, `snap`, `flash`, reads `root`, and sets `tintAmount`. A skinned adapter can extend this class and override the animation methods, or a later refactor can extract a narrower interface. Preserve the game-facing behavior either way. `fx` in `tick` may be `null` in previews.
 
-### Required animation names (all 16 must exist)
-
-`idle walkF walkB jump block light heavy special air hit launched down ko getup victory intro`
-
-| Anim | Driven how | Authoring notes |
-|---|---|---|
-| `idle` | looping | breathing, fidgets; **must reset `this.charge = 0`** (and other per-anim flags) |
-| `walkF` / `walkB` | looping, `t` continuous | cycles use `t·frequency`; back-walk is slower & leans back |
-| `jump` | uses `ctx.vy` | `u = smooth((−vy + 3)/7)` = 0 rising → 1 falling |
-| `block` | looping | also used for `blockstun` |
-| `light/heavy/special/air` | one-shot, `t` aligned with `moves.ts` | anticipation → strike at `hits[0].start` → recovery to `duration`; `special` should set `this.charge` during wind-up |
-| `hit` | one-shot | recoil with `e^(−5t)` + `shiver` |
-| `launched` | looping while airborne | flailing; also used for `grabbed` |
-| `down` / `ko` | looping | lying poses; `ko` is limp (no twitch) |
-| `getup` | one-shot 0.55 s | `u = smooth(t/0.5)` from lying to standing |
-| `victory` | looping | hops/taunts |
-| `intro` | one-shot ≈2.5 s | round start; camera is cinematic during this |
+For exact state durations, event timing, GLB/FBX mapping, root-motion policy and acceptance checks, use [`09-SKINNED-ANIMATION-CONTRACT.md`](09-SKINNED-ANIMATION-CONTRACT.md). Attack duration and contact windows always come from the chosen fighter's `src/game/moves.ts` entry.
 
 ## 2. Character reference
+
+These entries describe the **currently implemented procedural models**, including the existing procedural King Croak. They do not describe the imported dog or the handed-off skinned King Croak GLB.
 
 Common: every rig faces **local +Z**; `Fighter` sets `root.rotation.y = ±π/2`. Heights/widths
 used for hitboxes are in `moves.ts` (not derived from meshes).
@@ -116,38 +95,17 @@ used for hitboxes are in `moves.ts` (not derived from meshes).
 
 ## 3. Checklist: adding a new fighter
 
-1. **Data** — `src/game/moves.ts`
-   - add the id to `CharId`; create a `FighterConfig` (copy the closest archetype); add to `FIGHTERS`.
-   - if a move needs a new visual, add a new literal to `MoveDef.fx` (a union — TypeScript will then force you
-     to handle it, or it falls to `default` in `Game.moveFx`).
-   - fill `stats {speed,power,tough,icon}` (used by the select cards) and `moveNames`.
-2. **Rig** — `src/game/characters/<Name>.ts`
-   - `export class X extends CharacterRig`; build meshes in the constructor; register joints with `this.joint(...)`.
-   - define all **16** anims in a `defineAnims()`; set `blendSpeed` per anim; set `instant` joints if needed.
-   - implement `accent`, `sparkColor`, `chestWorld`, `strikeWorld` (cover every slot), `tick`.
-   - `registerFlash([...])` with the materials that should flash white on hit (skip additive/glow materials).
-   - `root.traverse` to set `castShadow` on meshes (disable for glow shells / transparent bits).
-   - shared helpers: `geom.ts` (`ellipsoid`, `capsuleDown`, `mergeGeometries`), `fur.ts` (`furShells`), `textures.ts`.
-3. **Factory** — `Game.makeRig(id)` (`src/game/Game.ts`): add a branch.
-4. **Presentation** — `Game.moveFx` (hit-window visual) and `Game.onMoveStart` (start / `__fire`) if new `fx` ids.
-5. **Engine features** (only if the archetype needs them): new `HitWindow`/`MoveDef` fields → handle in
-   `Fighter.landHit`/`update`; new systems follow the `MissileSystem`/`GasSystem` pattern (own `group`,
-   `update(dt, fighters, world, active)`, `clear()`, `dispose()`, wired in `Game` constructor/`startRound`/`update`/`dispose`).
-6. **UI** — nothing to do: `Menu.tsx` maps `Object.keys(FIGHTERS)`; card grids are 2 columns per player, so a
-   5th fighter will wrap (consider 3 columns at that point). Update copy on the title screen if desired.
-7. **AI** — no per-character logic exists; if the fighter has a unique threat (unblockable, hazard), extend
-   `AIController.update` like the `hop`/`evade` plans.
-8. **Verify** — `npx tsc --noEmit`, `npm run build`, then run the headless recipes in `docs/06`
-   (close-up render + a scripted hit/KO run) and check for console errors.
+1. **Combat data** — Add an id and `FighterConfig` in `src/game/moves.ts`. Define each move's duration, hit/fire windows, reach, FX, meter and cancel rules before final animation timing. Update audio catalog and any other exhaustive `CharId` handling.
+2. **Choose a rig path** — Existing procedural fighters subclass `CharacterRig`, register `Object3D` joints, author 16 pose functions, and use `blendSpeed`/`instant`. Imported fighters use a reviewed skinned GLB plus the adapter and state bindings in [`09-SKINNED-ANIMATION-CONTRACT.md`](09-SKINNED-ANIMATION-CONTRACT.md). A source clip name alone does not satisfy a state.
+3. **Game-facing sockets and materials** — Implement `accent`, `sparkColor`, `chestWorld`, all four `strikeWorld` slots, `grabAnchorWorld` if needed, and `tick`. Register or otherwise support damage flash and poison tint on appropriate instance materials; avoid flashing additive/glow materials. Set sensible shadow behavior for opaque and transparent parts.
+4. **Loading and factory** — Existing `Game.makeRig` is synchronous. Preload imported assets and gate match start before constructing skinned rig instances; keep procedural construction available. Clone skeletons per fighter.
+5. **Presentation and engine features** — Add new `MoveDef.fx` visuals, audio slots and any unique move systems in `Game`, `Fighter` and FX as needed. Attach optional weapons to sockets only for their corresponding moves.
+6. **UI/AI** — `Menu.tsx` maps `FIGHTERS`, but roster growth may need layout changes. Extend AI for unique threats such as grabs or hazards. Update character and stage copy.
+7. **Verify** — Build and type-check, then run the headless recipes in `docs/06`. Review all 16 states, attack event timing, contacts, two-instance behavior, resets, material/texture loading and A18-class mobile performance.
 
 ### Design guidance
-- Keep hitbox `reach` ≈ visual reach of the `strikeWorld` marker at `hits[0].start`; the contact point is
-  clamped into the defender, so overshoot looks fine but undershoot looks like whiffing.
-- Light: 5–7 dmg, ~0.4 s, cancelable; Heavy: 13–15 dmg with `launch`; Special: 50 meter, 20–22 dmg equivalent;
-  Air: 9–11 dmg with a downward impulse.
-- Anim blend speeds: attacks 18–26, hit 22, idle 6–7, walk 10–11, launched/down 9, ko 6.
-- Rest-pose gotcha: pose values are offsets — if you set a rest rotation on a joint (e.g. ears at `rz = ±0.9`),
-  **don't** re-add that value in the idle pose (it will double).
+
+Keep hitbox `reach` close to the visual reach of the `strikeWorld` socket during `hits[0].start..end`; the game clamps the reported contact point into the defender. Existing move values are character-specific; do not impose a universal 0.4-second light or 0.8-second heavy on imported fighters. For procedural rigs, attack blend speeds around 18–26, idle 6–7 and walk 10–11 are useful starting points; imported clips use crossfade duration and per-state playback rate instead. Rest-pose offsets apply only to the procedural pose path—do not add a bone's rest rotation twice during retargeting.
 
 ## 4. Shell fur (`src/game/fur.ts`) quick reference
 
