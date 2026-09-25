@@ -1,0 +1,866 @@
+[
+  {
+    "frame": "light-contact",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "attack",
+        "slot": "light",
+        "move": "Snap Strike",
+        "stateTime": 0.2,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -0.78,
+          1.85,
+          0.16
+        ],
+        "chest": [
+          -0.95,
+          1.42,
+          -0.02
+        ],
+        "pos": [
+          -1,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "hit",
+        "slot": null,
+        "move": null,
+        "stateTime": 0.06,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          0.93,
+          0.48,
+          -0.45
+        ],
+        "chest": [
+          1,
+          0.7,
+          0.02
+        ],
+        "pos": [
+          1.43,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "heavy-contact",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "attack",
+        "slot": "heavy",
+        "move": "Martelo Kick",
+        "stateTime": 0.36,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -0.9,
+          0.22,
+          0.24
+        ],
+        "chest": [
+          -1.06,
+          1.06,
+          0.34
+        ],
+        "pos": [
+          -0.65,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "launched",
+        "slot": null,
+        "move": null,
+        "stateTime": 0.06,
+        "grounded": false,
+        "tongue": 0,
+        "strike": [
+          0.97,
+          0.92,
+          -0.23
+        ],
+        "chest": [
+          1.34,
+          1,
+          0.04
+        ],
+        "pos": [
+          1.71,
+          0.3,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "special-charge",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "attack",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 0.5,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -0.71,
+          1.8,
+          1.14
+        ],
+        "chest": [
+          -0.37,
+          1.47,
+          0.06
+        ],
+        "pos": [
+          -0.47,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "launched",
+        "slot": null,
+        "move": null,
+        "stateTime": 0.1,
+        "grounded": false,
+        "tongue": 0,
+        "strike": [
+          2.08,
+          1.28,
+          0.13
+        ],
+        "chest": [
+          2.31,
+          1.02,
+          0.09
+        ],
+        "pos": [
+          2.63,
+          0.32,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "frog-light-contact",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "hit",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 0.06,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -0.9,
+          1.62,
+          0.16
+        ],
+        "chest": [
+          -1.08,
+          1.37,
+          0.01
+        ],
+        "pos": [
+          -1.08,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "attack",
+        "slot": "light",
+        "move": "Tongue Lash",
+        "stateTime": 0.18,
+        "grounded": true,
+        "tongue": 2.492,
+        "strike": [
+          -1.25,
+          0.31,
+          -0.88
+        ],
+        "chest": [
+          1.38,
+          0.47,
+          -0.16
+        ],
+        "pos": [
+          1.65,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "frog-heavy-grab",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "grabbed",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 0.06,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -0.75,
+          0.25,
+          0.36
+        ],
+        "chest": [
+          -0.6,
+          1.28,
+          0.05
+        ],
+        "pos": [
+          -0.83,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "attack",
+        "slot": "heavy",
+        "move": "Gullet Toss",
+        "stateTime": 0.36,
+        "grounded": true,
+        "tongue": 2.499,
+        "strike": [
+          -0.83,
+          0.43,
+          -2.22
+        ],
+        "chest": [
+          1.07,
+          0.62,
+          -0.31
+        ],
+        "pos": [
+          1.08,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "frog-special-charge",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "idle",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 0.61,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -0.92,
+          1.78,
+          0.04
+        ],
+        "chest": [
+          -1.24,
+          1.36,
+          0.07
+        ],
+        "pos": [
+          -1.3,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "attack",
+        "slot": "special",
+        "move": "Toxic Croak",
+        "stateTime": 0.56,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          0.59,
+          0.98,
+          -0.05
+        ],
+        "chest": [
+          0.82,
+          0.82,
+          -0.02
+        ],
+        "pos": [
+          1.2,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "frog-air",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "hit",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 0.06,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -0.79,
+          0.4,
+          0.36
+        ],
+        "chest": [
+          -0.45,
+          1.46,
+          0.01
+        ],
+        "pos": [
+          -0.45,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "attack",
+        "slot": "light",
+        "move": "Tongue Lash",
+        "stateTime": 0.18,
+        "grounded": true,
+        "tongue": 2.496,
+        "strike": [
+          0.76,
+          0.36,
+          -0.25
+        ],
+        "chest": [
+          0.88,
+          0.45,
+          -0.16
+        ],
+        "pos": [
+          1.15,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "walk-backward",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "walkB",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 0.6,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -2.64,
+          1.49,
+          0.31
+        ],
+        "chest": [
+          -2.96,
+          1.43,
+          0.01
+        ],
+        "pos": [
+          -3.12,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "idle",
+        "slot": "light",
+        "move": "Tongue Lash",
+        "stateTime": 0.65,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          0.95,
+          0.5,
+          -0.48
+        ],
+        "chest": [
+          0.93,
+          0.75,
+          -0.04
+        ],
+        "pos": [
+          1.3,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "guard-block",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "block",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 0.4,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -1.11,
+          1.8,
+          0.69
+        ],
+        "chest": [
+          -1.34,
+          1.33,
+          0.12
+        ],
+        "pos": [
+          -1.46,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "idle",
+        "slot": "light",
+        "move": "Tongue Lash",
+        "stateTime": 0.45,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          0.94,
+          0.55,
+          -0.43
+        ],
+        "chest": [
+          0.93,
+          0.81,
+          -0.03
+        ],
+        "pos": [
+          1.3,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "hit-recoil",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "idle",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 0.316,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -1.05,
+          1.6,
+          0.21
+        ],
+        "chest": [
+          -1.27,
+          1.37,
+          0.05
+        ],
+        "pos": [
+          -1.3,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "idle",
+        "slot": "light",
+        "move": "Tongue Lash",
+        "stateTime": 0.316,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          0.95,
+          0.55,
+          -0.41
+        ],
+        "chest": [
+          0.92,
+          0.8,
+          -0.02
+        ],
+        "pos": [
+          1.3,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "launched",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "launched",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 0.703,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -0.64,
+          0.88,
+          -0.59
+        ],
+        "chest": [
+          -1.03,
+          0.71,
+          -0.44
+        ],
+        "pos": [
+          -1.3,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "launched",
+        "slot": "light",
+        "move": "Tongue Lash",
+        "stateTime": 0.703,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          0.85,
+          0.35,
+          -0.38
+        ],
+        "chest": [
+          0.98,
+          0.65,
+          0.15
+        ],
+        "pos": [
+          1.3,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "knockdown",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "down",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 0.8,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -1.7,
+          0.13,
+          0.81
+        ],
+        "chest": [
+          -1.35,
+          0.74,
+          0.47
+        ],
+        "pos": [
+          -1.3,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "down",
+        "slot": "light",
+        "move": "Tongue Lash",
+        "stateTime": 0.8,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          1.37,
+          0.43,
+          -0.41
+        ],
+        "chest": [
+          1.41,
+          0.65,
+          -0.03
+        ],
+        "pos": [
+          1.3,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "ko-hold",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "ko",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 1.012,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -1.7,
+          0.13,
+          0.81
+        ],
+        "chest": [
+          -1.35,
+          0.73,
+          0.47
+        ],
+        "pos": [
+          -1.3,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "ko",
+        "slot": "light",
+        "move": "Tongue Lash",
+        "stateTime": 1.012,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          1.91,
+          0.43,
+          -0.38
+        ],
+        "chest": [
+          1.96,
+          0.65,
+          -0.01
+        ],
+        "pos": [
+          1.3,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "getup-mid",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "idle",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 0.3,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -1.05,
+          1.58,
+          0.21
+        ],
+        "chest": [
+          -1.27,
+          1.36,
+          0.05
+        ],
+        "pos": [
+          -1.3,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "idle",
+        "slot": "light",
+        "move": "Tongue Lash",
+        "stateTime": 0.3,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          0.96,
+          0.55,
+          -0.41
+        ],
+        "chest": [
+          0.92,
+          0.8,
+          -0.02
+        ],
+        "pos": [
+          1.3,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "victory",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "victory",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 1.21,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -1.36,
+          1.65,
+          -0.03
+        ],
+        "chest": [
+          -1.51,
+          1.49,
+          -0.14
+        ],
+        "pos": [
+          -1.3,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "victory",
+        "slot": "light",
+        "move": "Tongue Lash",
+        "stateTime": 1.21,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          0.64,
+          0.45,
+          -0.08
+        ],
+        "chest": [
+          1.06,
+          0.53,
+          0.13
+        ],
+        "pos": [
+          1.3,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  },
+  {
+    "frame": "intro-bow",
+    "fighters": [
+      {
+        "fighter": "dog",
+        "state": "intro",
+        "slot": "special",
+        "move": "Twin Fang Rush",
+        "stateTime": 1.61,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          -0.96,
+          1.59,
+          0.5
+        ],
+        "chest": [
+          -1.21,
+          1.35,
+          0.08
+        ],
+        "pos": [
+          -1.3,
+          0,
+          0
+        ]
+      },
+      {
+        "fighter": "toad",
+        "state": "intro",
+        "slot": "light",
+        "move": "Tongue Lash",
+        "stateTime": 1.61,
+        "grounded": true,
+        "tongue": 0,
+        "strike": [
+          1.04,
+          0.63,
+          -0.23
+        ],
+        "chest": [
+          1,
+          0.87,
+          -0.05
+        ],
+        "pos": [
+          1.3,
+          0,
+          0
+        ]
+      }
+    ],
+    "hit": null
+  }
+]

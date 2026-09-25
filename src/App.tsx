@@ -5,7 +5,7 @@ import { SelectScreen, Setup, TitleScreen } from "./components/Menu";
 import { TouchControls } from "./components/TouchControls";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { audio } from "./game/audio/AudioEngine";
-import { loadSkinned, SkinnedId, SkinnedSource } from "./game/characters/SkinnedFighter";
+import { AssetStatus, clearAssetCache, prepareMatch, subscribeAssets } from "./game/skinned/assets";
 
 type Screen = "title" | "select" | "fight";
 
@@ -25,8 +25,18 @@ export default function App() {
   const [isTouch, setIsTouch] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [assets, setAssets] = useState<AssetStatus[]>([]);
+  const [assetRetry, setAssetRetry] = useState(0);
   const gameRef = useRef<Game | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Asset progress for the loading HUD (fighter GLBs and the Kyoto stage props).
+  useEffect(() => {
+    const unsubscribe = subscribeAssets(setAssets);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(pointer: coarse)");
@@ -82,11 +92,14 @@ export default function App() {
     if (!canvas) return;
     let cancelled = false;
     setLoadError(null);
-    const needed = [...new Set([setup.p1, setup.p2].filter((id): id is SkinnedId => id === "dog" || id === "toad"))];
-    Promise.all(needed.map(async (id) => [id, await loadSkinned(id)] as const))
-      .then((entries) => {
+    // load everything this match needs (fighters + stage props) behind an explicit readiness gate
+    prepareMatch([setup.p1, setup.p2], setup.arena)
+      .then((prepared) => {
         if (cancelled) return;
-        const skinned = Object.fromEntries(entries) as Partial<Record<SkinnedId, SkinnedSource>>;
+        if (prepared.missing.length) {
+          // report but do not hide: the stage falls back to procedural props, a missing fighter is fatal
+          console.warn("[assets] missing:", prepared.missing.join("; "));
+        }
         const game = new Game(canvas, {
           mode,
           p1: setup.p1,
@@ -95,7 +108,7 @@ export default function App() {
           difficulty: setup.difficulty,
           roundsToWin: setup.roundsToWin,
           onState: setHud,
-          skinned,
+          assets: prepared,
         });
         gameRef.current = game;
       })
@@ -108,7 +121,7 @@ export default function App() {
       gameRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameKey]);
+  }, [gameKey, assetRetry]);
 
   const quit = useCallback(() => {
     setHud(null);
@@ -126,10 +139,45 @@ export default function App() {
     setSettingsOpen(true);
   }, [screen]);
 
+  const loadingRow = assets.filter((a) => a.phase !== "idle");
+
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
       <canvas key={gameKey} ref={canvasRef} className="absolute inset-0 h-full w-full" />
-      {loadError && <div className="absolute left-4 top-4 z-50 rounded bg-red-950/90 p-3 text-sm text-white">Could not load fighter: {loadError}</div>}
+      {loadingRow && !loadError && (
+        <div className="pointer-events-none absolute left-1/2 top-3 z-50 -translate-x-1/2 rounded-full border border-white/10 bg-black/60 px-4 py-1.5 text-[11px] font-semibold tracking-wide text-white/80">
+          {loadingRow.map((a) => (
+            <span key={a.key} className="mx-2">
+              {a.label}
+              <span className={a.phase === "error" ? " text-red-300" : " text-emerald-300"}>
+                {" "}
+                {a.phase === "error" ? "failed" : `${Math.max(1, Math.round(a.bytes / 1024))} kB`}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+      {loadError && (
+        <div className="absolute left-1/2 top-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-red-500/30 bg-red-950/95 p-4 text-sm text-white shadow-xl">
+          <div className="mb-1 font-bold tracking-wide">Fighter asset failed to load</div>
+          <div className="mb-3 text-red-100/90">{loadError}</div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                // the cache drops failed promises, so this really retries the request
+                clearAssetCache();
+                setAssetRetry((n) => n + 1);
+              }}
+              className="rounded bg-white/90 px-3 py-1 text-xs font-bold text-red-950 hover:bg-white"
+            >
+              RETRY
+            </button>
+            <button onClick={quit} className="rounded border border-white/25 px-3 py-1 text-xs font-bold text-white/90 hover:bg-white/10">
+              BACK TO TITLE
+            </button>
+          </div>
+        </div>
+      )}
 
       {screen === "title" && (
         <TitleScreen

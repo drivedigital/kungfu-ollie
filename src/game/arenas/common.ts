@@ -17,6 +17,24 @@ export const ARENAS: ArenaInfo[] = [
   { id: "kyoto", name: "Kyoto Coliseum", subtitle: "Cherry petals · Stone courtyard · Kung fu crowd", gradient: "linear-gradient(160deg,#352942 0%,#b65f78 55%,#f8bb92 100%)" },
 ];
 
+/**
+ * A backdrop built from art planes needs a constrained camera, otherwise the cards show their
+ * edges. `Game.updateCamera` clamps the camera to this box and replaces the attract-mode orbit
+ * with a lateral dolly.
+ */
+export interface CameraEnvelope {
+  minZ: number;
+  maxZ: number;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  /** attract mode may not orbit a card-based stage */
+  orbit: boolean;
+  /** look-at height the stage wants so its tiers stay behind the fighters */
+  lookY?: number;
+}
+
 export interface Arena {
   group: THREE.Group;
   sun: THREE.DirectionalLight;
@@ -25,6 +43,10 @@ export interface Arena {
   fog: THREE.Fog | THREE.FogExp2;
   background: THREE.Color;
   dustColor: number;
+  /** present on stage builds that need a constrained camera */
+  camera?: CameraEnvelope;
+  /** cosmetic footfall kick-up (petals, wheat, sparks) — called by Game on land and steps */
+  footfall?(x: number, z: number, strength: number, fx: FX): void;
   update(dt: number, time: number, fx: FX): void;
   dispose(): void;
 }

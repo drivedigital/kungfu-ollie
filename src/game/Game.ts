@@ -9,7 +9,9 @@ import { RobotChicken } from "./characters/RobotChicken";
 import { FluffyBuffalo } from "./characters/FluffyBuffalo";
 import { ScrapEwe } from "./characters/ScrapEwe";
 import { KingCroak } from "./characters/KingCroak";
-import { SkinnedFighter, SkinnedSource } from "./characters/SkinnedFighter";
+import { SkinnedFighter, isSkinnedFighter } from "./characters/SkinnedFighter";
+import { bindingFor } from "./skinned/bindings";
+import type { PreparedAssets, SkinnedId } from "./skinned/assets";
 import { CharId, FIGHTERS, HitWindow, MoveDef } from "./moves";
 import { FX } from "./FX";
 import { MissileSystem } from "./Projectiles";
@@ -70,19 +72,29 @@ export interface GameOptions {
   difficulty: Difficulty;
   roundsToWin: number;
   onState(s: HUDState): void;
-  skinned?: Partial<Record<"dog" | "toad", SkinnedSource>>;
+  /** parsed GLBs for this match (see src/game/skinned/assets.ts) — omitted in unit contexts */
+  assets?: PreparedAssets;
 }
 
 const ROUND_TIME = 99;
 
-function makeRig(id: CharId, sources?: GameOptions["skinned"]): CharacterRig {
-  if (id === "dog" && sources?.dog) return new SkinnedFighter("dog", sources.dog);
-  if (id === "toad" && sources?.toad) return new SkinnedFighter("toad", sources.toad);
+/**
+ * Build a rig for a character. Characters with a skinned binding (the dog, and King Croak when
+ * his GLB loaded) require their asset; everything else stays procedural. A missing skinned asset
+ * is an error rather than a silent substitution, so the UI can show what failed and offer a retry.
+ */
+function makeRig(id: CharId, assets?: PreparedAssets): CharacterRig {
+  const binding = bindingFor(id);
+  if (binding) {
+    const source = assets?.fighters[binding.id as SkinnedId];
+    if (!source) throw new Error(`${id}: "${binding.id}" asset was not loaded (see the load error banner)`);
+    return new SkinnedFighter(source, binding);
+  }
   if (id === "chicken") return new RobotChicken();
   if (id === "buffalo") return new FluffyBuffalo();
   if (id === "toad") return new KingCroak();
   if (id === "ewe") return new ScrapEwe();
-  throw new Error(`Skinned fighter ${id} was not loaded`);
+  throw new Error(`No rig available for ${id}`);
 }
 
 interface MissileSpawn {
@@ -109,14 +121,14 @@ const MISSILE_WINDOW: HitWindow = {
   hitstop: 0.08,
 };
 
-function buildArena(id: ArenaId): Arena {
+function buildArena(id: ArenaId, assets?: PreparedAssets): Arena {
   switch (id) {
     case "foundry":
       return buildFoundry();
     case "meadow":
       return buildMeadow();
     case "kyoto":
-      return buildKyoto();
+      return buildKyoto(assets?.stages.kyoto ?? null);
     default:
       return buildWasteland();
   }
@@ -151,6 +163,7 @@ export class Game {
   private shake = 0;
   private camPos = new THREE.Vector3(0, 2.5, 10);
   private camLook = new THREE.Vector3(0, 1.2, 0);
+  private lastFrameInfo = { calls: 0, triangles: 0, geometries: 0, textures: 0, programs: 0, frameMs: 0, fps: 0 };
   private banner: Banner | null = null;
   private bannerKey = 0;
   private hudAccum = 0;
@@ -180,7 +193,7 @@ export class Game {
 
     this.camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 1500);
 
-    this.arena = buildArena(opts.arena);
+    this.arena = buildArena(opts.arena, opts.assets);
     this.scene.add(this.arena.group);
     this.scene.fog = this.arena.fog;
     this.scene.background = this.arena.background;
@@ -198,8 +211,8 @@ export class Game {
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
 
-    const f1 = new Fighter(FIGHTERS[opts.p1], makeRig(opts.p1, opts.skinned));
-    const f2 = new Fighter(FIGHTERS[opts.p2], makeRig(opts.p2, opts.skinned));
+    const f1 = new Fighter(FIGHTERS[opts.p1], makeRig(opts.p1, opts.assets));
+    const f2 = new Fighter(FIGHTERS[opts.p2], makeRig(opts.p2, opts.assets));
     this.fighters = [f1, f2];
     this.scene.add(f1.rig.root, f2.rig.root);
 
@@ -275,7 +288,7 @@ export class Game {
     this.missiles.dispose();
     this.gas.dispose();
     this.arena.dispose();
-    for (const f of this.fighters) if (f.rig instanceof SkinnedFighter) f.rig.dispose();
+    for (const f of this.fighters) if (isSkinnedFighter(f.rig)) f.rig.disposeRig();
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;
       if (m.geometry && !m.userData.sharedGeometry) m.geometry.dispose();
@@ -565,6 +578,8 @@ export class Game {
 
   private onLand(f: Fighter, impact: number) {
     const pan = Math.max(-0.6, Math.min(0.6, f.pos.x / 8));
+    // cosmetic kick-up at the landing spot (petals in Kyoto); no effect on other stages
+    this.arena.footfall?.(f.pos.x, f.pos.z, Math.min(1, impact / 13), this.fx);
     if (impact > 9) {
       this.fx.ring(f.pos, 0xffffff, 1.6 + impact * 0.05, 0.4);
       this.shake = Math.max(this.shake, Math.min(0.5, impact * 0.03));
@@ -655,7 +670,22 @@ export class Game {
     const raw = Math.min(0.05, this.frameTimer.getDelta());
     if (!this.paused) this.update(raw);
     this.updateCamera(raw);
+    // the composer runs several render passes per frame; without this, info would only ever
+    // describe the final full-screen pass
+    this.renderer.info.autoReset = false;
+    this.renderer.info.reset();
     this.composer.render();
+    // renderer.info is reset at the start of each render pass, so this is the one place where the
+    // previous frame's draw calls / triangle count are readable in full
+    this.lastFrameInfo = {
+      calls: this.renderer.info.render.calls,
+      triangles: this.renderer.info.render.triangles,
+      geometries: this.renderer.info.memory.geometries,
+      textures: this.renderer.info.memory.textures,
+      programs: this.renderer.info.programs?.length ?? 0,
+      frameMs: raw * 1000,
+      fps: raw > 0 ? 1 / raw : 0,
+    };
   };
 
   private update(raw: number) {
@@ -813,8 +843,16 @@ export class Game {
     const target = new THREE.Vector3();
     const look = new THREE.Vector3();
     let k = 1 - Math.exp(-raw * 5);
+    // card-based stages publish a camera envelope, otherwise the backdrop planes show their edges
+    const env = this.arena.camera;
 
-    if (this.phase === "attract" && this.opts.arena === "kyoto") {
+    if (this.phase === "attract" && env && !env.orbit) {
+      // lateral dolly instead of an orbit
+      const sweep = Math.sin(this.time * 0.16) * 0.5 + 0.5;
+      target.set(-5.2 + sweep * 10.4, env.minY + 0.95 + Math.sin(this.time * 0.4) * 0.35, env.minZ + 2.2);
+      look.set(-1.4 + sweep * 2.8, (env.lookY ?? 1.15) + 0.15, 0);
+      k = 1 - Math.exp(-raw * 1.6);
+    } else if (this.phase === "attract" && env) {
       target.set(Math.sin(this.time * 0.18) * 1.1, 2.4, 11);
       look.set(0, 1.2, 0);
       k = 1 - Math.exp(-raw * 2);
@@ -829,14 +867,24 @@ export class Game {
       look.set(l.pos.x, 0.9 + l.pos.y * 0.5, 0);
       k = 1 - Math.exp(-raw * 3.5);
     } else {
-      const dist = THREE.MathUtils.clamp(5.6 + sep * 0.9, 7.6, 13.5);
+      const near = env ? env.minZ - 0.8 : 7.6;
+      const far = env ? env.maxZ : 13.5;
+      const dist = THREE.MathUtils.clamp(5.6 + sep * 0.9, near, far);
       target.set(mid, 1.9 + sep * 0.06 + avgY * 0.35, dist);
       look.set(mid, 1.2 + avgY * 0.5, 0);
       if (this.phase === "intro") {
         k = 1 - Math.exp(-raw * (0.8 + smooth(this.phaseTime / 2.5) * 3));
       }
     }
-    target.x = THREE.MathUtils.clamp(target.x, -ARENA_BOUNDS - 1, ARENA_BOUNDS + 1);
+    if (env) {
+      // clamp the *target*; camPos lerps toward it, so the camera can never leave the envelope
+      target.x = THREE.MathUtils.clamp(target.x, env.minX, env.maxX);
+      target.y = THREE.MathUtils.clamp(target.y, env.minY, env.maxY);
+      target.z = THREE.MathUtils.clamp(target.z, env.minZ, env.maxZ);
+      look.y = env.lookY ?? look.y;
+    } else {
+      target.x = THREE.MathUtils.clamp(target.x, -ARENA_BOUNDS - 1, ARENA_BOUNDS + 1);
+    }
     // optional debug override: window.__cam = { pos: [x,y,z], look: [x,y,z] }
     const dbg = (window as unknown as { __cam?: { pos: number[]; look: number[] } }).__cam;
     if (dbg) {
@@ -858,6 +906,70 @@ export class Game {
   }
 
   /* ------------------------------------------------------------------ */
+
+  /**
+   * Read-only diagnostics for the offline preview harness (tools/preview) and the review overlay.
+   * Deliberately narrow: renderer counters, camera state and per-fighter rig coverage.
+   */
+  debugSnapshot() {
+    const info = this.renderer.info;
+    const env = this.arena.camera;
+    return {
+      phase: this.phase,
+      arena: this.opts.arena,
+      time: +this.time.toFixed(2),
+      render: {
+        // renderer.info is cleared at the start of every render pass, so the authoritative
+        // numbers for a completed frame are the ones cached by the loop above
+        calls: this.lastFrameInfo.calls,
+        triangles: this.lastFrameInfo.triangles,
+        points: info.render.points,
+        lines: info.render.lines,
+        geometries: this.lastFrameInfo.geometries,
+        textures: this.lastFrameInfo.textures,
+        programs: this.lastFrameInfo.programs,
+      },
+      performance: { frameMs: +this.lastFrameInfo.frameMs.toFixed(2), fps: +this.lastFrameInfo.fps.toFixed(1) },
+      pixelRatio: this.renderer.getPixelRatio(),
+      size: [this.renderer.domElement.clientWidth, this.renderer.domElement.clientHeight],
+      camera: {
+        pos: this.camera.position.toArray().map((v) => +v.toFixed(3)),
+        look: this.camLook.toArray().map((v) => +v.toFixed(3)),
+        fov: this.camera.fov,
+        aspect: +this.camera.aspect.toFixed(4),
+        envelope: env ? { ...env } : null,
+        insideEnvelope:
+          !env ||
+          (this.camera.position.x >= env.minX - 0.05 &&
+            this.camera.position.x <= env.maxX + 0.05 &&
+            this.camera.position.y >= env.minY - 0.05 &&
+            this.camera.position.y <= env.maxY + 0.05 &&
+            this.camera.position.z >= env.minZ - 0.05 &&
+            this.camera.position.z <= env.maxZ + 0.05),
+      },
+      fighters: this.fighters.map((f) => {
+        const rig = isSkinnedFighter(f.rig) ? f.rig : null;
+        const chest = f.rig.chestWorld(new THREE.Vector3()).toArray().map((v) => +v.toFixed(3));
+        const screen = new THREE.Vector3(chest[0], chest[1], chest[2]).project(this.camera);
+        return {
+          id: f.cfg.id,
+          state: f.state,
+          facing: f.facing,
+          x: +f.pos.x.toFixed(3),
+          y: +f.pos.y.toFixed(3),
+          chest,
+          // normalised device coordinates, so off-screen (>1) is detectable
+          ndc: [+screen.x.toFixed(3), +screen.y.toFixed(3)],
+          skinned: !!rig,
+          rigState: rig ? rig.state : null,
+          tongueReach: rig ? +rig.tongueReach().toFixed(3) : 0,
+          missingStates: rig ? rig.missingStates : [],
+          provisionalStates: rig ? rig.describe().filter((r) => r.provisional).map((r) => r.state) : [],
+          flashMaterials: f.rig.flashMaterials.length,
+        };
+      }),
+    };
+  }
 
   private hudFighter(f: Fighter, idx: number): HUDFighter {
     const combo = this.comboShow && this.comboShow.idx === idx && this.comboShow.until > this.time ? this.comboShow.count : 0;

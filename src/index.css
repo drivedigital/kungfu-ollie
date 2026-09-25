@@ -1,4 +1,12 @@
-@import "tailwindcss";
+/*
+ * Tailwind's automatic source detection walks the whole repository, which includes the multi-megabyte
+ * GLB review assets under handoff/ and public/models/ — it reads those binaries as text and the
+ * production build then runs out of memory. Scope the scan to the files that can actually contain
+ * class names instead (Vite entry HTML + the app sources).
+ */
+@import "tailwindcss" source(none);
+@source "../index.html";
+@source "./**/*.{ts,tsx}";
 
 :root {
   --font-display: "Bangers", "Impact", "Arial Black", sans-serif;
