@@ -5,7 +5,7 @@ import { SelectScreen, Setup, TitleScreen } from "./components/Menu";
 import { TouchControls } from "./components/TouchControls";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { audio } from "./game/audio/AudioEngine";
-import { loadSkinned, SkinnedId, SkinnedSource } from "./game/characters/SkinnedFighter";
+import { prepareAssets } from "./game/skinned/assets";
 
 type Screen = "title" | "select" | "fight";
 
@@ -82,11 +82,11 @@ export default function App() {
     if (!canvas) return;
     let cancelled = false;
     setLoadError(null);
-    const needed = [...new Set([setup.p1, setup.p2].filter((id): id is SkinnedId => id === "dog" || id === "toad"))];
-    Promise.all(needed.map(async (id) => [id, await loadSkinned(id)] as const))
-      .then((entries) => {
+    // Preload all required skinned fighter GLBs + stage props before constructing the match
+    prepareAssets([setup.p1, setup.p2], setup.arena)
+      .then((assets) => {
         if (cancelled) return;
-        const skinned = Object.fromEntries(entries) as Partial<Record<SkinnedId, SkinnedSource>>;
+        if (assets.missing.length) console.warn("[app] missing assets:", assets.missing);
         const game = new Game(canvas, {
           mode,
           p1: setup.p1,
@@ -95,7 +95,7 @@ export default function App() {
           difficulty: setup.difficulty,
           roundsToWin: setup.roundsToWin,
           onState: setHud,
-          skinned,
+          assets,
         });
         gameRef.current = game;
       })

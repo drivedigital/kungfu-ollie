@@ -9,7 +9,9 @@ import { RobotChicken } from "./characters/RobotChicken";
 import { FluffyBuffalo } from "./characters/FluffyBuffalo";
 import { ScrapEwe } from "./characters/ScrapEwe";
 import { KingCroak } from "./characters/KingCroak";
-import { SkinnedFighter, SkinnedSource } from "./characters/SkinnedFighter";
+import { SkinnedRig, isSkinnedRig } from "./skinned/SkinnedRig";
+import type { PreparedAssets } from "./skinned/assets";
+import { skinnedBindingFor } from "./skinned/bindings";
 import { CharId, FIGHTERS, HitWindow, MoveDef } from "./moves";
 import { FX } from "./FX";
 import { MissileSystem } from "./Projectiles";
@@ -70,19 +72,27 @@ export interface GameOptions {
   difficulty: Difficulty;
   roundsToWin: number;
   onState(s: HUDState): void;
-  skinned?: Partial<Record<"dog" | "toad", SkinnedSource>>;
+  /**
+   * GLBs parsed by `prepareAssets` before the match was constructed. Anything missing here falls
+   * back to the procedural rig / prop, so a match always starts.
+   */
+  assets?: PreparedAssets;
 }
 
 const ROUND_TIME = 99;
 
-function makeRig(id: CharId, sources?: GameOptions["skinned"]): CharacterRig {
-  if (id === "dog" && sources?.dog) return new SkinnedFighter("dog", sources.dog);
-  if (id === "toad" && sources?.toad) return new SkinnedFighter("toad", sources.toad);
+function makeRig(id: CharId, assets?: PreparedAssets): CharacterRig {
+  const b = skinnedBindingFor(id);
+  if (b && assets?.fighters[id]) {
+    return new SkinnedRig(b, assets.fighters[id]!);
+  }
+  // fallback to procedural rigs
   if (id === "chicken") return new RobotChicken();
   if (id === "buffalo") return new FluffyBuffalo();
   if (id === "toad") return new KingCroak();
   if (id === "ewe") return new ScrapEwe();
-  throw new Error(`Skinned fighter ${id} was not loaded`);
+  if (id === "dog") return new FluffyBuffalo(); // placeholder: no procedural dog exists yet
+  throw new Error(`No rig available for ${id}`);
 }
 
 interface MissileSpawn {
@@ -109,14 +119,14 @@ const MISSILE_WINDOW: HitWindow = {
   hitstop: 0.08,
 };
 
-function buildArena(id: ArenaId): Arena {
+function buildArena(id: ArenaId, assets?: PreparedAssets): Arena {
   switch (id) {
     case "foundry":
       return buildFoundry();
     case "meadow":
       return buildMeadow();
     case "kyoto":
-      return buildKyoto();
+      return buildKyoto(assets?.stages.kyoto ?? null);
     default:
       return buildWasteland();
   }
@@ -180,7 +190,7 @@ export class Game {
 
     this.camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 1500);
 
-    this.arena = buildArena(opts.arena);
+    this.arena = buildArena(opts.arena, opts.assets);
     this.scene.add(this.arena.group);
     this.scene.fog = this.arena.fog;
     this.scene.background = this.arena.background;
@@ -198,8 +208,8 @@ export class Game {
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
 
-    const f1 = new Fighter(FIGHTERS[opts.p1], makeRig(opts.p1, opts.skinned));
-    const f2 = new Fighter(FIGHTERS[opts.p2], makeRig(opts.p2, opts.skinned));
+    const f1 = new Fighter(FIGHTERS[opts.p1], makeRig(opts.p1, opts.assets));
+    const f2 = new Fighter(FIGHTERS[opts.p2], makeRig(opts.p2, opts.assets));
     this.fighters = [f1, f2];
     this.scene.add(f1.rig.root, f2.rig.root);
 
@@ -275,7 +285,7 @@ export class Game {
     this.missiles.dispose();
     this.gas.dispose();
     this.arena.dispose();
-    for (const f of this.fighters) if (f.rig instanceof SkinnedFighter) f.rig.dispose();
+    for (const f of this.fighters) if (isSkinnedRig(f.rig)) f.rig.disposeRig();
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;
       if (m.geometry && !m.userData.sharedGeometry) m.geometry.dispose();
@@ -573,6 +583,8 @@ export class Game {
     } else if (impact > 3) {
       audio.play(`${f.cfg.id}.thud.soft`, { gain: Math.min(1, 0.5 + impact * 0.05), vary: 0.06, pan });
     }
+    // arena-specific footfall kick-up (petals on Kyoto, etc.)
+    this.arena.footfall?.(f.pos.x, 0, impact > 9 ? 0.8 : 0.3, this.fx);
   }
 
   /** Per-frame move visuals (slash arcs at the hit window, stampede dust). */
@@ -813,10 +825,13 @@ export class Game {
     const target = new THREE.Vector3();
     const look = new THREE.Vector3();
     let k = 1 - Math.exp(-raw * 5);
+    const env = this.arena.camera;
 
-    if (this.phase === "attract" && this.opts.arena === "kyoto") {
-      target.set(Math.sin(this.time * 0.18) * 1.1, 2.4, 11);
-      look.set(0, 1.2, 0);
+    if (this.phase === "attract" && env && !env.orbit) {
+      // card-based stage: lateral dolly only, no orbit
+      const cx = (env.minX + env.maxX) / 2;
+      target.set(cx + Math.sin(this.time * 0.18) * (env.maxX - cx) * 0.12, (env.minY + env.maxY) / 2, env.maxZ - 1);
+      look.set(0, env.lookY ?? 1.2, 0);
       k = 1 - Math.exp(-raw * 2);
     } else if (this.phase === "attract") {
       const ang = this.time * 0.11;
@@ -835,6 +850,12 @@ export class Game {
       if (this.phase === "intro") {
         k = 1 - Math.exp(-raw * (0.8 + smooth(this.phaseTime / 2.5) * 3));
       }
+    }
+    // clamp to arena camera envelope if present
+    if (env) {
+      target.x = THREE.MathUtils.clamp(target.x, env.minX, env.maxX);
+      target.y = THREE.MathUtils.clamp(target.y, env.minY, env.maxY);
+      target.z = THREE.MathUtils.clamp(target.z, env.minZ, env.maxZ);
     }
     target.x = THREE.MathUtils.clamp(target.x, -ARENA_BOUNDS - 1, ARENA_BOUNDS + 1);
     // optional debug override: window.__cam = { pos: [x,y,z], look: [x,y,z] }

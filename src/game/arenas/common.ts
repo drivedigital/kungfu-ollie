@@ -8,13 +8,39 @@ export interface ArenaInfo {
   name: string;
   subtitle: string;
   gradient: string;
+  /** optional concept art used by the select screen card */
+  art?: string;
+}
+
+/**
+ * A plane-based stage (cards for sky/temple/crowd) needs a constrained camera envelope or the
+ * cards will show their edges. `Game.updateCamera` clamps to this box and swaps the attract-mode
+ * orbit for a lateral dolly.
+ */
+export interface CameraEnvelope {
+  minZ: number;
+  maxZ: number;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  /** attract mode may not orbit a card-based stage */
+  orbit: boolean;
+  /** extra look-at height bias so the crowd tiers stay behind the fighters */
+  lookY?: number;
 }
 
 export const ARENAS: ArenaInfo[] = [
   { id: "wasteland", name: "Wasteland Sunset", subtitle: "Cracked earth · Storm front · Tumbleweeds", gradient: "linear-gradient(160deg,#1f3540 0%,#c8562a 55%,#ffb347 100%)" },
   { id: "foundry", name: "Scrapyard Foundry", subtitle: "Molten steel · Overhead crane · Sparks", gradient: "linear-gradient(160deg,#04161c 0%,#0f3a44 50%,#e0b520 100%)" },
   { id: "meadow", name: "Golden Meadow", subtitle: "Swaying wheat · Wildflowers · Butterflies", gradient: "linear-gradient(160deg,#8fb0dc 0%,#f6c98f 55%,#8a9a3e 100%)" },
-  { id: "kyoto", name: "Kyoto Coliseum", subtitle: "Cherry petals · Stone courtyard · Kung fu crowd", gradient: "linear-gradient(160deg,#352942 0%,#b65f78 55%,#f8bb92 100%)" },
+  {
+    id: "kyoto",
+    name: "Kyoto Coliseum",
+    subtitle: "Stone courtyard · Cherry petals · Lantern crowd",
+    gradient: "linear-gradient(160deg,#3b2b52 0%,#c96a5a 45%,#f3c98b 75%,#7d5a4a 100%)",
+    art: "/arenas/kyoto-coliseum-gameplay-view.png",
+  },
 ];
 
 export interface Arena {
@@ -25,6 +51,10 @@ export interface Arena {
   fog: THREE.Fog | THREE.FogExp2;
   background: THREE.Color;
   dustColor: number;
+  /** present on card/plane-based stages that need a constrained camera */
+  camera?: CameraEnvelope;
+  /** cosmetic footfall kick-up (petals, wheat, sparks) — called by Game on land/step */
+  footfall?(x: number, z: number, strength: number, fx: FX): void;
   update(dt: number, time: number, fx: FX): void;
   dispose(): void;
 }
